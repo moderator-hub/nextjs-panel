@@ -10,7 +10,7 @@ export default function Home() {
 
   // TODO scrollbar's showing up on vertical resize
 
-  return <BasicPage style={{ overflow: "hidden" }}>
+  return <BasicPage shift={false} style={{ overflow: "hidden" }}>
     <Box sx={{ display: "flex", alignContent: "center", justifyContent: "center", height: height }}>
       <Stack sx={{ maxWidth: 900, width: "100%", m: "auto", textAlign: "center" }} direction="column">
         <Typography variant="h1">
