@@ -1,8 +1,9 @@
-import { AppBar, Box, Button, Container, Stack, Toolbar, Typography } from "@mui/material"
+import { Box, Button, Container, Stack, Typography } from "@mui/material"
 
 import BasicPage from "../components/templates/page-template"
 import { useWindowState } from "../components/utils/effects"
 import { privileges } from "../data/static"
+import { Link } from "../components/common/navigation"
 
 
 export default function Home() {
@@ -20,7 +21,12 @@ export default function Home() {
           What's next?
         </Typography>
         <Container sx={{ justifyContent: "space-between", mt: 1 }}>
-          {privileges.map((item, key) => <Button key={key} variant="contained" sx={{ width: 170, mx: 2, my: 1 }}>{item}</Button>)}
+          {privileges.map((item, key) =>
+            <Link href={`/categories/${key}`}>
+              <Button key={key} variant="contained" sx={{ width: 170, mx: 2, my: 1 }}>
+                {item}
+              </Button>
+            </Link>)}
         </Container>
       </Stack>
     </Box>

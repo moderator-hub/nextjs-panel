@@ -1,4 +1,4 @@
-import { Box, Button, FormGroup, IconButton, InputAdornment, Stack, TextField, Typography } from "@mui/material"
+import { Box, Button, Stack, TextField, Typography } from "@mui/material"
 
 import { useForm, Controller } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
@@ -57,7 +57,7 @@ export default function SignInPage() {
         />
         <Button
           variant="contained"
-          sx={{ mx: "35%", mt: 2 }}
+          sx={{ mx: "37%", mt: 2 }}
           onClick={handleSubmit((data: any) => console.log(data))}
         >
           SIGN IN

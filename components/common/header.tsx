@@ -50,10 +50,7 @@ function OutsiderHeader() {
 
   return <AppBar position="fixed" enableColorOnDark>
     <Toolbar variant="dense">
-      <Stack direction="row" sx={{ width: "50%" }}>
-        <HeaderItem href="/" path={path} text="home" />
-      </Stack>
-      <Stack direction="row-reverse" sx={{ width: "50%" }}>
+      <Stack direction="row-reverse" sx={{ width: "100%" }}>
         <HeaderItem text="support" href="/support" path={path} />
         <HeaderItem text="sign in" href="/signin" path={path} />
       </Stack>
@@ -62,7 +59,7 @@ function OutsiderHeader() {
 }
 
 export default function Header() {
-  const loggedIn: boolean = false
+  const loggedIn: boolean = true
 
   return loggedIn ? <AuthorizedHeader /> : <OutsiderHeader />
 }
