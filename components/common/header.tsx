@@ -3,23 +3,29 @@ import { useRouter } from "next/router"
 import { privileges } from "../../data/static"
 import { Link } from "./navigation"
 
+interface HeaderButtonProps {
+  text: string;
+  selected?: boolean;
+}
+
 interface HeaderItemProps {
   href: string;
   text: string;
   path?: string;
+  selected?: boolean;
 }
 
-interface HeaderButtonProps {
-  text: string;
-  disabled?: boolean;
+function HeaderButton({ text, selected }: HeaderButtonProps) {
+  return <Button sx={{ color: selected ? "secondary.main" : "common.white" }}>{text.toUpperCase()}</Button>
 }
 
-function HeaderButton({ text, disabled }: HeaderButtonProps) {
-  return <Button disabled={disabled} sx={{ color: "common.white" }}>{text.toUpperCase()}</Button>
-}
-
-function HeaderItem({ href, text, path }: HeaderItemProps) {
-  return <Link href={href}><HeaderButton text={text} disabled={href === path} /></Link>
+function HeaderItem({ href, text, path, selected }: HeaderItemProps) {
+  return <Link href={href}>
+    <HeaderButton
+      text={text}
+      selected={selected === undefined ? href === path : selected}
+    />
+  </Link>
 }
 
 function AuthorizedHeader() {
@@ -33,7 +39,13 @@ function AuthorizedHeader() {
       </Stack>
       <Stack direction="row" sx={{ width: "50%", justifyContent: "center" }}>
         {router.asPath !== "/" && privileges.map((item, key) =>
-          <HeaderItem text={item} key={key} href={`/category/${key}`} path={path} />
+          <HeaderItem
+            text={item}
+            key={key}
+            path={path}
+            href={`/categories/${key}`}
+            selected={path.startsWith(`/categories/${key}`)}
+          />
         )}
       </Stack>
       <Stack direction="row-reverse" sx={{ width: "25%" }}>

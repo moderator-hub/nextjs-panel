@@ -22,8 +22,8 @@ export default function Home() {
         </Typography>
         <Container sx={{ justifyContent: "space-between", mt: 1 }}>
           {privileges.map((item, key) =>
-            <Link href={`/categories/${key}`}>
-              <Button key={key} variant="contained" sx={{ width: 170, mx: 2, my: 1 }}>
+            <Link href={`/categories/${key}`} key={key}>
+              <Button variant="contained" sx={{ width: 170, mx: 2, my: 1 }}>
                 {item}
               </Button>
             </Link>)}
