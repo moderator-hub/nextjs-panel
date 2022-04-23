@@ -37,7 +37,7 @@ export function useAuthorized(): Authorized {
         .then(response => {
           if (response.status === 200) {
             response.json().then(permissions => dispatch(signIn(permissions)))
-          } else if (response.status === 401) {
+          } else if (response.status === 401 || response.status === 403) {
             requireSignIn()
           } else console.log("Got code", response.status, "for /my-permissions/")
         })

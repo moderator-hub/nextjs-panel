@@ -23,14 +23,19 @@ export default function Home() {
         <Typography variant="h3">
           What's next?
         </Typography>
-        <Container sx={{ justifyContent: "space-between", mt: 1 }}>
-          {permissions?.map((item, key) =>
-            <Link href={`/categories/${key}`} key={key}>
-              <Button variant="contained" sx={{ width: 170, mx: 2, my: 1 }}>
-                {item}
-              </Button>
-            </Link>)}
-        </Container>
+        {permissions === undefined || permissions?.length === 0
+          ? <Typography variant="body1" sx={{ mt: 1 }}> 
+            This account doesn't have any permissions
+          </Typography>
+          : <Container sx={{ justifyContent: "space-between", mt: 1 }}>
+            {permissions?.map((item, key) =>
+              <Link href={`/categories/${item.name}`} key={key}>
+                <Button variant="contained" sx={{ width: 170, mx: 2, my: 1 }}>
+                  {item.name}
+                </Button>
+              </Link>)}
+          </Container>
+        }
       </Stack>
     </Box>
   </ProtectedPage>

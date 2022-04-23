@@ -44,8 +44,7 @@ function ProtectedPageInner({
   Page500 = <DefaultError />,
   PageOther = <DefaultError />,
   PageLoading = <DefaultLoading />,
-  children,
-}: ProtectedPageInnerProps) {
+}: ProtectedPageInnerProps, children: ReactNode) {
   switch (code) {
     case 0: 
     case 401: return PageLoading
@@ -61,6 +60,6 @@ function ProtectedPageInner({
 
 export function ProtectedPage({children, ...props}: ProtectedPageProps) {
   return <BasicPage {...props}>
-    {ProtectedPageInner(props)}
+    {ProtectedPageInner(props, children)}
   </BasicPage>
 }

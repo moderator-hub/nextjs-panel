@@ -8,6 +8,10 @@ import { BasicPage } from "../components/templates/page-template"
 import { useWindowState } from "../utils/effects"
 import { outsiderJSONFetch } from "../utils/fetcher"
 import { useState } from "react"
+import { signIn } from "../data/slices/moderator"
+import { AppDispatch } from "../data/store"
+import { useAppDispatch, useAppSelector } from "../data/hooks"
+import { useRouter } from "next/router"
 
 const schema = yup
   .object({
@@ -25,6 +29,10 @@ interface SignInErrors {
 
 export default function SignInPage() {
   const height = useWindowState()[1]
+
+  const router = useRouter()
+  const dispatch: AppDispatch = useAppDispatch()
+  const retryPath = useAppSelector(state => state.moderator.retryPath)
 
   const [fetchErrors, setErrors] = useState<SignInErrors>({})
   const { control, handleSubmit, formState: { errors }, } = useForm({ resolver: yupResolver(schema), })
@@ -111,7 +119,9 @@ export default function SignInPage() {
                     } else if (data === "Wrong password") {
                       setErrors({ wrongPassword: true })
                     } else if (Array.isArray(data)) {
-                      // success?
+                      dispatch(signIn(data))
+                      if (retryPath) router.push(retryPath)
+                      else router.push("/")
                     } else {
                       setErrors({ serverError: true })
                     }
