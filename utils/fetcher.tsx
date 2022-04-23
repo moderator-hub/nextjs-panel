@@ -13,3 +13,19 @@ export function outsiderFetch(path: string, request?: RequestInit): Promise<Resp
 export function authorizedFetch(path: string, request?: RequestInit): Promise<Response> {
   return baseFetch(path, authorizedFetchArgs(), request)
 }
+
+export function outsiderJSONFetch(path: string, body: any, request?: RequestInit): Promise<Response> {
+  return outsiderFetch(path, { 
+    body: JSON.stringify(body), 
+    ...request,
+    headers: { "Content-Type": "application/json", ...request?.headers }
+  })
+}
+
+export function authorizedJSONFetch(path: string, body: any, request?: RequestInit): Promise<Response> {
+  return authorizedFetch(path, { 
+    body: JSON.stringify(body), 
+    ...request,
+    headers: { "Content-Type": "application/json", ...request?.headers }
+  })
+}
