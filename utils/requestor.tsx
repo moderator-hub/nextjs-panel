@@ -78,5 +78,5 @@ export function useRequestor(path: string, request?: RequestInit): Requestor {
     }
   }, [setState])
 
-  return { dispatch, router, ...state }
+  return { dispatch, router, authorized, ...state }
 }

@@ -29,7 +29,7 @@ export default function Home() {
           </Typography>
           : <Container sx={{ justifyContent: "space-between", mt: 1 }}>
             {permissions?.map((item, key) =>
-              <Link href={`/categories/${item.name}`} key={key}>
+              <Link href={`/categories/${item.name.replace(" ", "-")}`} key={key}>
                 <Button variant="contained" sx={{ width: 170, mx: 2, my: 1 }}>
                   {item.name}
                 </Button>
