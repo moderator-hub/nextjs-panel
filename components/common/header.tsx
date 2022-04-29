@@ -1,19 +1,19 @@
 import { AppBar, Button, Stack, Toolbar } from "@mui/material"
 import { useRouter } from "next/router"
-import { useAppSelector } from "../../data/hooks";
-import { privileges } from "../../data/static"
+import { useAppSelector } from "../../data/hooks"
+import { useAuthorized } from "../../utils/requestor"
 import { Link } from "./navigation"
 
 interface HeaderButtonProps {
-  text: string;
-  selected?: boolean;
+  text: string
+  selected?: boolean
 }
 
 interface HeaderItemProps {
-  href: string;
-  text: string;
-  path?: string;
-  selected?: boolean;
+  href: string
+  text: string
+  path?: string
+  selected?: boolean
 }
 
 function HeaderButton({ text, selected }: HeaderButtonProps) {
@@ -33,19 +33,21 @@ function AuthorizedHeader() {
   const router = useRouter()
   const path: string = router.asPath
 
+  const permissions = useAppSelector(state => state.moderator.permissions)
+
   return <AppBar position="fixed" enableColorOnDark>
     <Toolbar variant="dense">
       <Stack direction="row" sx={{ width: "25%" }}>
         <HeaderItem href="/" path={path} text="home" />
       </Stack>
       <Stack direction="row" sx={{ width: "50%", justifyContent: "center" }}>
-        {router.asPath !== "/" && privileges.map((item, key) =>
+        {router.asPath !== "/" && permissions?.map((item, key) =>
           <HeaderItem
-            text={item}
+            text={item.name}
             key={key}
             path={path}
-            href={`/categories/${key}`}
-            selected={path.startsWith(`/categories/${key}`)}
+            href={`/categories/${item.name.replace(" ", "-")}`}
+            selected={path.startsWith(`/categories/${item.name.replace(" ", "-")}`)}
           />
         )}
       </Stack>
@@ -72,7 +74,7 @@ function OutsiderHeader() {
 }
 
 export default function Header() {
-  const authorized = useAppSelector(state => state.moderator.authorized)
+  const { authorized } = useAuthorized()
 
   return authorized ? <AuthorizedHeader /> : <OutsiderHeader />
 }
