@@ -23,6 +23,7 @@ export function BasicPage({ title = "MUB", favicon = "/favicon.ico", style, shif
 interface ProtectedPageInnerProps {
   code: number
   children?: ReactNode
+  PageError?: ReactNode
   Page400?: ReactNode
   Page403?: ReactNode
   Page404?: ReactNode
@@ -37,22 +38,23 @@ interface ProtectedPageProps extends BasicPageProps, ProtectedPageInnerProps {
 
 function ProtectedPageInner({ 
   code, 
-  Page400 = <DefaultError />, 
-  Page403 = <DefaultError />, 
-  Page404 = <Default404 />, 
-  Page422 = <DefaultError />,
-  Page500 = <DefaultError />,
-  PageOther = <DefaultError />,
+  PageError = <DefaultError />,
+  Page400,
+  Page403, 
+  Page404 = <Default404 />,
+  Page422,
+  Page500,
+  PageOther,
   PageLoading = <DefaultLoading />,
 }: ProtectedPageInnerProps, children: ReactNode) {
   switch (code) {
     case 0: 
     case 401: return PageLoading
-    case 400: return Page400
-    case 403: return Page403
+    case 400: return Page400 === undefined ? PageError : Page400
+    case 403: return Page403 === undefined ? PageError : Page403
     case 404: return Page404
-    case 422: return Page422
-    case 500: return Page500
+    case 422: return Page422 === undefined ? PageError : Page422
+    case 500: return Page500 === undefined ? PageError : Page500
     case 200: return children
     default: return PageOther
   }
