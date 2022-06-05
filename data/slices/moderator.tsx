@@ -1,9 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-
-interface ModPerm {
-  id: number
-  name: string
-}
+import { ModPerm } from '../../utils/other'
 
 interface ModeratorState {
   authorized?: boolean
