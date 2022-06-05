@@ -27,8 +27,10 @@ export function useAuthorized(): Authorized {
   const authorized = useAppSelector(state => state.moderator.authorized)
 
   function requireSignIn() {
-    dispatch(fail(router.asPath))
-    router.push("/signin")
+    if (router.asPath !== "/signin") {
+      dispatch(fail(router.asPath))
+      router.push("/signin")
+    } else dispatch(fail("/"))
   }
 
   useEffect(() => {

@@ -7,6 +7,7 @@ import { Link } from "./navigation"
 interface HeaderButtonProps {
   text: string
   selected?: boolean
+  onClick?: any
 }
 
 interface HeaderItemProps {
@@ -16,8 +17,8 @@ interface HeaderItemProps {
   selected?: boolean
 }
 
-function HeaderButton({ text, selected }: HeaderButtonProps) {
-  return <Button sx={{ color: selected ? "secondary.main" : "common.white" }}>{text.toUpperCase()}</Button>
+function HeaderButton({ text, selected, onClick }: HeaderButtonProps) {
+  return <Button sx={{ color: selected ? "secondary.main" : "common.white" }} onClick={onClick}>{text.toUpperCase()}</Button>
 }
 
 function HeaderItem({ href, text, path, selected }: HeaderItemProps) {
@@ -53,7 +54,7 @@ function AuthorizedHeader() {
       </Stack>
       <Stack direction="row-reverse" sx={{ width: "25%" }}>
         <HeaderItem text="support" href="/support" path={path} />
-        <HeaderButton text="log out" />
+        <HeaderButton text="log out" onClick={() => { console.log("lol") }} />
       </Stack>
     </Toolbar>
   </AppBar>

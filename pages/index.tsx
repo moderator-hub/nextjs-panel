@@ -21,11 +21,11 @@ export default function Home() {
           Welcome!
         </Typography>
         <Typography variant="h3">
-          What's next?
+          What&apos;s next?
         </Typography>
         {permissions === undefined || permissions?.length === 0
           ? <Typography variant="body1" sx={{ mt: 1 }}> 
-            This account doesn't have any permissions
+            This account doesn&apos;t have any permissions
           </Typography>
           : <Container sx={{ justifyContent: "space-between", mt: 1 }}>
             {permissions?.map((item, key) =>
