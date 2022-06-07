@@ -132,6 +132,7 @@ function EditModeratorDialog({ data, open, onClose }: ModeratorDialogProps) {
             fullWidth
             margin="normal"
             {...field}
+            ref={null}
           />
         )}
       />
@@ -148,6 +149,7 @@ function EditModeratorDialog({ data, open, onClose }: ModeratorDialogProps) {
             fullWidth
             margin="normal"
             {...field}
+            ref={null}
           />
         )}
       />

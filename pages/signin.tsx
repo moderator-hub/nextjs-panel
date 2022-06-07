@@ -76,6 +76,7 @@ export default function SignInPage() {
               fullWidth
               margin="normal"
               {...field}
+              ref={null}
             />
           )}
         />
@@ -91,6 +92,7 @@ export default function SignInPage() {
               fullWidth
               margin="normal"
               {...field}
+              ref={null}
             />
           )}
         />
