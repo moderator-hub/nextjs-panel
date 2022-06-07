@@ -52,31 +52,54 @@ export function useAuthorized(): Authorized {
 }
 
 export function useRequestor(path: string, request?: RequestInit): Requestor {
-  const { authorized, dispatch, router } = useAuthorized()
+  const router = useRouter()
+
+  const dispatch: AppDispatch = useAppDispatch()
+  const authorized = useAppSelector(state => state.moderator.authorized)
 
   const [state, setState] = useState<RequestState>({ code: 0 })
 
   function requireSignIn() {
     setState({ code: 401 })
-    dispatch(fail(router.asPath))
-    router.push("/signin")
+    if (router.asPath !== "/signin") {
+      dispatch(fail(router.asPath))
+      router.push("/signin")
+    } else dispatch(fail("/"))
+  }
+
+  function requestData() {
+    authorizedFetch(path, request)
+      .then(response => {
+        switch (response.status) {
+          case 200:
+            response.json().then(data => setState({ code: response.status, data }))
+            break
+          case 401:
+            requireSignIn()
+            break
+          default:
+            setState({ code: response.status })
+        }
+      })
   }
 
   useEffect(() => {
-    if (authorized) {
-      authorizedFetch(path, request)
+    if (authorized === true) {
+      requestData()
+    } else if (authorized === undefined) {
+      authorizedFetch("/my-permissions/", { method: "get", })
         .then(response => {
-          switch (response.status) {
-            case 200:
-              response.json().then(data => setState({ code: response.status, data }))
-              break
-            case 401:
-              requireSignIn()
-              break
-            default:
-              setState({ code: response.status })
-          }
+          if (response.status === 200) {
+            response.json().then(permissions => {
+              dispatch(signIn(permissions))
+              requestData()
+            })
+          } else if (response.status === 401 || response.status === 403) {
+            requireSignIn()
+          } else console.log("Got code", response.status, "for /my-permissions/")
         })
+    } else if (authorized === false) {
+      requireSignIn()
     }
   }, [setState])
 
