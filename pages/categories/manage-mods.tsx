@@ -299,20 +299,22 @@ function ModeratorCardSwitch(props: ModeratorCardProps) {
 }
 
 export default function ManageMods() {
-  const { data: globalPermissions, code: code1 } = useRequestor("/permissions/")
+  const [creating, setCreating] = useState<boolean>(false)
+
+  const { data: globalPermissions, code: code1 } = useRequest("/permissions/")
+
   const [moderators, setModerators] = useState<ModeratorData[]>([])
   const [hasNext, setHasNext] = useState<boolean>(false)
   const [code2, setCode2] = useState<number>(0)
 
+  const { protectedRequest } = useRequestor(({ code, data: { results, "has-next": hasMore } }: RequestState) => {
+    setModerators([...moderators, ...results.map((x: any) => ({ ...x, permissions: x.permissions.map((p: ModPerm) => p.id) }))])
+    setHasNext(hasMore)
+    setCode2(code)
+  })
+
   function loadMore() {
-    authorizedFetch("/moderators/?offset=" + moderators.length.toString()).then(
-      (response) => {
-        if (response.ok) response.json().then(({ results, "has-next": hasMore }: any) => {
-          setModerators([...moderators, ...results])
-          setHasNext(hasMore)
-        })
-      }
-    )
+    protectedRequest("/moderators/?offset=" + moderators.length.toString())
   }
   useEffect(loadMore, [setModerators, setHasNext])
 
@@ -359,7 +361,3 @@ export default function ManageMods() {
     </Stack>
   </ProtectedPage >
 }
-
-
-
-

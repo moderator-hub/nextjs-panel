@@ -18,7 +18,8 @@ export interface Authorized {
   router: NextRouter
 }
 
-export interface Requestor extends Authorized, RequestState {
+export interface Requestor extends Authorized {
+  protectedRequest: (path: string, request?: RequestInit) => void
 }
 
 export function useAuthorized(): Authorized {
@@ -52,13 +53,18 @@ export function useAuthorized(): Authorized {
   return { authorized, dispatch, router }
 }
 
-export function useRequestor(path: string, request?: RequestInit): Requestor {
+export interface RequestorPrams {
+  path: string
+  request?: RequestInit
+  onSuccess?: (data: any) => void
+  onError?: (code: number, error: any) => void
+}
+
+export function useRequestor(setState: (state: RequestState) => void): Requestor {
   const router = useRouter()
 
   const dispatch: AppDispatch = useAppDispatch()
   const authorized = useAppSelector(state => state.moderator.authorized)
-
-  const [state, setState] = useState<RequestState>({ code: 0 })
 
   function requireSignIn() {
     setState({ code: 401 })
@@ -68,7 +74,7 @@ export function useRequestor(path: string, request?: RequestInit): Requestor {
     } else dispatch(fail("/"))
   }
 
-  function requestData() {
+  function requestData(path: string, request?: RequestInit) {
     authorizedFetch(path, request)
       .then(response => {
         switch (response.status) {
@@ -84,16 +90,16 @@ export function useRequestor(path: string, request?: RequestInit): Requestor {
       })
   }
 
-  useEffect(() => {
+  function protectedRequest(path: string, request?: RequestInit) {
     if (authorized === true) {
-      requestData()
+      requestData(path, request)
     } else if (authorized === undefined) {
       authorizedFetch("/my-permissions/", { method: "get", })
         .then(response => {
           if (response.status === 200) {
             response.json().then(permissions => {
               dispatch(signIn(permissions))
-              requestData()
+              requestData(path, request)
             })
           } else if (response.status === 401 || response.status === 403 || response.status === 422) {
             requireSignIn()
@@ -102,7 +108,19 @@ export function useRequestor(path: string, request?: RequestInit): Requestor {
     } else if (authorized === false) {
       requireSignIn()
     }
-  }, [setState])
+  }
 
-  return { dispatch, router, authorized, ...state }
+  return { dispatch, router, authorized, protectedRequest }
+}
+
+export interface RequestAndRequestor extends RequestState, Requestor {
+
+}
+
+export function useRequest(path: string, request?: RequestInit): RequestAndRequestor {
+  const [state, setState] = useState<RequestState>({ code: 0 })
+  const requestor = useRequestor(setState)
+  const { protectedRequest } = requestor
+  useEffect(() => protectedRequest(path, request), [setState])
+  return { ...requestor, ...state }
 }
