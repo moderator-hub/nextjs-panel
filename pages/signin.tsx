@@ -12,6 +12,7 @@ import { signIn } from "../data/slices/moderator"
 import { AppDispatch } from "../data/store"
 import { useAppDispatch, useAppSelector } from "../data/hooks"
 import { useRouter } from "next/router"
+import { PasswordField } from "../components/common/library"
 
 const schema = yup
   .object({
@@ -75,6 +76,7 @@ export default function SignInPage() {
               fullWidth
               margin="normal"
               {...field}
+              ref={null}
             />
           )}
         />
@@ -83,14 +85,14 @@ export default function SignInPage() {
           control={control}
           defaultValue=""
           render={({ field }) => (
-            <TextField
+            <PasswordField
               sx={{ width: "100%", }}
               label="Password"
-              type="password"
               error={passwordError}
               fullWidth
               margin="normal"
               {...field}
+              ref={null}
             />
           )}
         />
@@ -111,7 +113,7 @@ export default function SignInPage() {
             setErrors({})
             outsiderJSONFetch("/sign-in/", data, { method: "post" })
               .then(response => {
-                if (response.status === 200) { 
+                if (response.status === 200) {
                   return response.json().then(data => {
                     console.log(data)
                     if (data === "Moderator does not exist") {

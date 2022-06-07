@@ -8,6 +8,7 @@ import { authorizedFetch } from "./fetcher"
 
 export interface RequestState {
   code: number,
+  error?: any,
   data?: any
 }
 
@@ -17,9 +18,6 @@ export interface Authorized {
   router: NextRouter
 }
 
-export interface Requestor extends Authorized, RequestState {
-}
-
 export function useAuthorized(): Authorized {
   const router = useRouter()
 
@@ -27,8 +25,10 @@ export function useAuthorized(): Authorized {
   const authorized = useAppSelector(state => state.moderator.authorized)
 
   function requireSignIn() {
-    dispatch(fail(router.asPath))
-    router.push("/signin")
+    if (router.asPath !== "/signin") {
+      dispatch(fail(router.asPath))
+      router.push("/signin")
+    } else dispatch(fail("/"))
   }
 
   useEffect(() => {
@@ -49,34 +49,85 @@ export function useAuthorized(): Authorized {
   return { authorized, dispatch, router }
 }
 
-export function useRequestor(path: string, request?: RequestInit): Requestor {
-  const { authorized, dispatch, router } = useAuthorized()
+export interface RequestorPrams {
+  path: string
+  request?: RequestInit
+  body?: any
+  setState: (state: RequestState) => void
+}
 
-  const [state, setState] = useState<RequestState>({ code: 0 })
+export interface Requestor extends Authorized {
+  protectedRequest: (params: RequestorPrams) => void
+}
 
-  function requireSignIn() {
+export function useRequestor(): Requestor {
+  const router = useRouter()
+
+  const dispatch: AppDispatch = useAppDispatch()
+  const authorized = useAppSelector(state => state.moderator.authorized)
+
+  function requireSignIn(setState: (state: RequestState) => void) {
     setState({ code: 401 })
-    dispatch(fail(router.asPath))
-    router.push("/signin")
+    if (router.asPath !== "/signin") {
+      dispatch(fail(router.asPath))
+      router.push("/signin")
+    } else dispatch(fail("/"))
   }
 
-  useEffect(() => {
-    if (authorized) {
-      authorizedFetch(path, request)
-        .then(response => {
-          switch (response.status) {
-            case 200:
-              response.json().then(data => setState({ code: response.status, data }))
-              break
-            case 401:
-              requireSignIn()
-              break
-            default:
-              setState({ code: response.status })
-          }
-        })
+  function requestData({ path, request, body, setState }: RequestorPrams) {
+    if (body !== undefined) {
+      request = {
+        body: JSON.stringify(body),
+        ...request,
+        headers: { "Content-Type": "application/json", ...request?.headers }
+      }
     }
-  }, [setState])
+    authorizedFetch(path, request)
+      .then(response => {
+        switch (response.status) {
+          case 200:
+            response.json().then(data => setState({ code: response.status, data }))
+            break
+          case 401:
+            requireSignIn(setState)
+            break
+          default:
+            response.json().then(error => setState({ code: response.status, error }))
+        }
+      })
+  }
 
-  return { dispatch, router, authorized, ...state }
+  function protectedRequest(params: RequestorPrams) {
+    if (authorized === true) {
+      requestData(params)
+    } else if (authorized === undefined) {
+      authorizedFetch("/my-permissions/", { method: "get", })
+        .then(response => {
+          if (response.status === 200) {
+            response.json().then(permissions => {
+              dispatch(signIn(permissions))
+              requestData(params)
+            })
+          } else if (response.status === 401 || response.status === 403 || response.status === 422) {
+            requireSignIn(params.setState)
+          } else console.log("Got code", response.status, "for /my-permissions/")
+        })
+    } else if (authorized === false) {
+      requireSignIn(params.setState)
+    }
+  }
+
+  return { dispatch, router, authorized, protectedRequest }
+}
+
+export interface RequestAndRequestor extends RequestState, Requestor {
+
+}
+
+export function useRequest(path: string, request?: RequestInit): RequestAndRequestor {
+  const [state, setState] = useState<RequestState>({ code: 0 })
+  const requestor = useRequestor()
+  const { protectedRequest } = requestor
+  useEffect(() => protectedRequest({ path, request, setState }), [setState])
+  return { ...requestor, ...state }
 }
