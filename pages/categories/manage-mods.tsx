@@ -1,15 +1,17 @@
-import { useState } from "react"
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, IconButton, InputAdornment, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material"
+import { useEffect, useState } from "react"
+import { Button, Dialog, DialogContent, DialogTitle, Grid, IconButton, InputAdornment, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material"
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Close as CloseIcon, Star as StarIcon, DoNotDisturb as DoNotDisturbIcon } from "@mui/icons-material"
 import { useForm, Controller } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
+import InfiniteScroll from "react-infinite-scroll-component"
 import * as yup from "yup"
 
-import { ProtectedPage } from "../../components/templates/page-template"
 import { TooltipIconButton, CardWrapper, CheckboxedItem, AreYouSureDialog, PasswordField } from "../../components/common/library"
+import { ProtectedPage } from "../../components/templates/page-template"
+import { authorizedFetch } from "../../utils/fetcher"
+import { useRequestor } from "../../utils/requestor"
 import { isEmpty, ModPerm } from "../../utils/other"
 import { useAppSelector } from "../../data/hooks"
-import { useRequestor } from "../../utils/requestor"
 
 interface ModeratorData {
   id: number
@@ -256,28 +258,50 @@ function ModeratorCardSwitch(props: ModeratorCardProps) {
 
 export default function ManageMods() {
   const { data: globalPermissions, code: code1 } = useRequestor("/permissions/")
-  const { data: { results: moderators, "has-next": hasNext } = {}, code: code2 } = useRequestor("/moderators/?offset=0")
+  const [moderators, setModerators] = useState<ModeratorData[]>([])
+  const [hasNext, setHasNext] = useState<boolean>(false)
 
   const [creating, setCreating] = useState<boolean>(false)
 
-  return <ProtectedPage code={code1 === 200 ? code2 : code1} title="Moderator Management | MUB">
+  function loadMore() {
+    authorizedFetch("/moderators/?offset=" + moderators.length.toString()).then(
+      (response) => {
+        if (response.ok) response.json().then(({ results, "has-next": hasMore }: any) => {
+          setModerators([...moderators, ...results])
+          setHasNext(hasMore)
+        })
+      }
+    )
+  }
+  useEffect(loadMore, [setModerators, setHasNext])
+
+  return <ProtectedPage code={code1} title="Moderator Management | MUB">
     <EditModeratorDialog open={creating} onClose={() => setCreating(false)} globalPermissions={globalPermissions} />
-    <Stack sx={{ maxWidth: 1200, width: "100%", m: "auto", pt: 4, px: 2, textAlign: "center" }} direction="column">
+    <Stack sx={{ maxWidth: 1200, width: "100%", m: "auto", py: 4, px: 2, textAlign: "center" }} direction="column">
       <Typography variant="h4" sx={{ mb: 2 }}>
         Superuser: Moderator Management
       </Typography>
-      <Grid container spacing={2}>
-        {(moderators as ModeratorData[])?.map(
-          (data, index) => <Grid item xs={3} key={index}>
-            <ModeratorCardSwitch data={data} globalPermissions={globalPermissions} />
+      {moderators !== undefined &&
+        <InfiniteScroll
+          dataLength={moderators.length}
+          next={loadMore}
+          hasMore={hasNext === true}
+          loader={<h4>Loading...</h4>}
+        >
+          <Grid container spacing={2}>
+            <Grid item xs={3}>
+              <CardWrapper height={cardHeight} onClick={() => setCreating(true)}>
+                <AddIcon />
+              </CardWrapper>
+            </Grid>
+            {(moderators)?.map(
+              (data, index) => <Grid item xs={3} key={index}>
+                <ModeratorCardSwitch data={data} globalPermissions={globalPermissions} />
+              </Grid>
+            )}
           </Grid>
-        )}
-        <Grid item xs={3}>
-          <CardWrapper height={cardHeight} onClick={() => setCreating(true)}>
-            <AddIcon />
-          </CardWrapper>
-        </Grid>
-      </Grid>
+        </InfiniteScroll>
+      }
     </Stack>
-  </ProtectedPage>
+  </ProtectedPage >
 }
