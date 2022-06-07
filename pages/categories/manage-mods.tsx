@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Button, Dialog, DialogContent, DialogTitle, Grid, IconButton, InputAdornment, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material"
+import { Button, Dialog, DialogContent, DialogTitle, Grid, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material"
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Close as CloseIcon, Star as StarIcon, DoNotDisturb as DoNotDisturbIcon } from "@mui/icons-material"
 import { useForm, Controller } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
@@ -9,7 +9,7 @@ import * as yup from "yup"
 import { TooltipIconButton, CardWrapper, CheckboxedItem, AreYouSureDialog, PasswordField } from "../../components/common/library"
 import { ProtectedPage } from "../../components/templates/page-template"
 import { authorizedFetch, authorizedJSONFetch } from "../../utils/fetcher"
-import { RequestState, useRequest, useRequestor } from "../../utils/requestor"
+import { RequestorPrams, RequestState, useRequest, useRequestor } from "../../utils/requestor"
 import { isEmpty, ModPerm } from "../../utils/other"
 import { useAppSelector } from "../../data/hooks"
 import { useRouter } from "next/router"
@@ -25,28 +25,27 @@ interface ModeratorDialogProps {
   open: boolean
   onClose: () => void
   updateModerator: (id: number, data?: ModeratorData) => void
+  protectedRequest: (params: RequestorPrams) => void
 }
 
 interface RemoveModeratorDialogProps extends ModeratorDialogProps {
   data: ModeratorData
 }
 
-function RemoveModeratorDialog({ data, open, onClose, updateModerator }: RemoveModeratorDialogProps) {
+function RemoveModeratorDialog({ data, open, onClose, updateModerator, protectedRequest }: RemoveModeratorDialogProps) {
   const router = useRouter()
 
   function confirm() {
-    authorizedFetch(`/moderators/${data.id}/`, { method: "delete" })
-      .then(response => {
-        if (response.ok) {
+    protectedRequest({
+      path: `/moderators/${data.id}/`,
+      request: { method: "delete" },
+      setState: ({ code, error }: RequestState) => {
+        if (code === 200) {
           updateModerator(data.id)
           onClose()
-        }
-        else {
-          console.log("Error!", response.status)
-          response.json().then(console.log)
-          router.push("/signin/")
-        }
-      })
+        } else console.log("Error!", code, error)
+      }
+    })
   }
 
   return <AreYouSureDialog
@@ -77,7 +76,7 @@ interface EditModeratorDialogProps extends ModeratorDialogProps {
   globalPermissions: ModPerm[]
 }
 
-function EditModeratorDialog({ data, open, onClose, globalPermissions, updateModerator }: EditModeratorDialogProps) {
+function EditModeratorDialog({ data, open, onClose, globalPermissions, updateModerator, protectedRequest }: EditModeratorDialogProps) {
   const newEntry = data === undefined
   const myPerms: undefined | number[] = useAppSelector(state => state.moderator.permissions?.map(item => item.id))
   const initialPerms: number[] = data === undefined ? [] : data.permissions
@@ -115,12 +114,13 @@ function EditModeratorDialog({ data, open, onClose, globalPermissions, updateMod
     newData["append-perms"] = permissions.filter(x => !initialPerms.includes(x))
     newData["remove-perms"] = initialPerms.filter(x => !permissions.includes(x))
 
-    console.log(newData)
-
     if (newData.username || newData.password || newData["append-perms"].length > 0 || newData["remove-perms"].length > 0) {
-      authorizedJSONFetch(newEntry ? "/moderators/" : `/moderators/${data.id}/`, newData, { method: "post" })
-        .then((response) => {
-          if (response.ok) response.json().then(serverData => {
+      protectedRequest({
+        path: newEntry ? "/moderators/" : `/moderators/${data.id}/`,
+        body: newData,
+        request: { method: "post" },
+        setState: ({ code, data: serverData, error }) => {
+          if (code === 200) {
             if (newEntry) {
               updateModerator(serverData.id, { ...serverData, permissions: serverData.permissions.map((p: ModPerm) => p.id) })
               setPermissions(initialPerms)
@@ -129,13 +129,9 @@ function EditModeratorDialog({ data, open, onClose, globalPermissions, updateMod
               updateModerator(data.id, { ...data, ...newData, permissions })
             }
             onClose()
-          })
-          else {
-            console.log("Error!")  // TODO improve
-            response.json().then(console.log)
-            close()
-          }
-        })
+          } else console.log("Error!", code, error)
+        }
+      })
     } else onClose()
   })
 
@@ -238,6 +234,7 @@ interface ModeratorCardProps {
   data: ModeratorData
   globalPermissions: ModPerm[]
   updateModerator: (id: number, data?: ModeratorData) => void
+  protectedRequest: (params: RequestorPrams) => void
 }
 
 function SuperuserCard({ data }: ModeratorCardProps) {
@@ -307,15 +304,14 @@ export default function ManageMods() {
   const [hasNext, setHasNext] = useState<boolean>(false)
   const [code2, setCode2] = useState<number>(0)
 
-  const { protectedRequest } = useRequestor(({ code, data: { results, "has-next": hasMore } }: RequestState) => {
+  const { protectedRequest } = useRequestor()
+  function setAll({ code, data: { results, "has-next": hasMore } }: RequestState) {
     setModerators([...moderators, ...results.map((x: any) => ({ ...x, permissions: x.permissions.map((p: ModPerm) => p.id) }))])
     setHasNext(hasMore)
     setCode2(code)
-  })
-
-  function loadMore() {
-    protectedRequest("/moderators/?offset=" + moderators.length.toString())
   }
+
+  const loadMore = () => protectedRequest({ path: "/moderators/?offset=" + moderators.length.toString(), setState: setAll })
   useEffect(loadMore, [setModerators, setHasNext])
 
   function updateModerator(newModId: number, newMod?: ModeratorData) {
@@ -332,7 +328,13 @@ export default function ManageMods() {
   }
 
   return <ProtectedPage code={code1 === 200 ? code2 : code1} title="Moderator Management | MUB">
-    <EditModeratorDialog open={creating} onClose={() => setCreating(false)} globalPermissions={globalPermissions} updateModerator={updateModerator} />
+    <EditModeratorDialog
+      open={creating}
+      onClose={() => setCreating(false)}
+      globalPermissions={globalPermissions}
+      protectedRequest={protectedRequest}
+      updateModerator={updateModerator}
+    />
     <Stack sx={{ maxWidth: 1200, width: "100%", m: "auto", py: 4, px: 2, textAlign: "center" }} direction="column">
       <Typography variant="h4" sx={{ mb: 2 }}>
         Superuser: Moderator Management
@@ -352,7 +354,12 @@ export default function ManageMods() {
             </Grid>
             {(moderators)?.map(
               (data, index) => <Grid item xs={3} key={index}>
-                <ModeratorCardSwitch data={data} globalPermissions={globalPermissions} updateModerator={updateModerator} />
+                <ModeratorCardSwitch
+                  data={data}
+                  globalPermissions={globalPermissions}
+                  protectedRequest={protectedRequest}
+                  updateModerator={updateModerator}
+                />
               </Grid>
             )}
           </Grid>

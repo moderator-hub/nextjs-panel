@@ -18,10 +18,6 @@ export interface Authorized {
   router: NextRouter
 }
 
-export interface Requestor extends Authorized {
-  protectedRequest: (path: string, request?: RequestInit) => void
-}
-
 export function useAuthorized(): Authorized {
   const router = useRouter()
 
@@ -56,17 +52,21 @@ export function useAuthorized(): Authorized {
 export interface RequestorPrams {
   path: string
   request?: RequestInit
-  onSuccess?: (data: any) => void
-  onError?: (code: number, error: any) => void
+  body?: any
+  setState: (state: RequestState) => void
 }
 
-export function useRequestor(setState: (state: RequestState) => void): Requestor {
+export interface Requestor extends Authorized {
+  protectedRequest: (params: RequestorPrams) => void
+}
+
+export function useRequestor(): Requestor {
   const router = useRouter()
 
   const dispatch: AppDispatch = useAppDispatch()
   const authorized = useAppSelector(state => state.moderator.authorized)
 
-  function requireSignIn() {
+  function requireSignIn(setState: (state: RequestState) => void) {
     setState({ code: 401 })
     if (router.asPath !== "/signin") {
       dispatch(fail(router.asPath))
@@ -74,7 +74,14 @@ export function useRequestor(setState: (state: RequestState) => void): Requestor
     } else dispatch(fail("/"))
   }
 
-  function requestData(path: string, request?: RequestInit) {
+  function requestData({ path, request, body, setState }: RequestorPrams) {
+    if (body !== undefined) {
+      request = {
+        body: JSON.stringify(body),
+        ...request,
+        headers: { "Content-Type": "application/json", ...request?.headers }
+      }
+    }
     authorizedFetch(path, request)
       .then(response => {
         switch (response.status) {
@@ -82,7 +89,7 @@ export function useRequestor(setState: (state: RequestState) => void): Requestor
             response.json().then(data => setState({ code: response.status, data }))
             break
           case 401:
-            requireSignIn()
+            requireSignIn(setState)
             break
           default:
             response.json().then(error => setState({ code: response.status, error }))
@@ -90,23 +97,23 @@ export function useRequestor(setState: (state: RequestState) => void): Requestor
       })
   }
 
-  function protectedRequest(path: string, request?: RequestInit) {
+  function protectedRequest(params: RequestorPrams) {
     if (authorized === true) {
-      requestData(path, request)
+      requestData(params)
     } else if (authorized === undefined) {
       authorizedFetch("/my-permissions/", { method: "get", })
         .then(response => {
           if (response.status === 200) {
             response.json().then(permissions => {
               dispatch(signIn(permissions))
-              requestData(path, request)
+              requestData(params)
             })
           } else if (response.status === 401 || response.status === 403 || response.status === 422) {
-            requireSignIn()
+            requireSignIn(params.setState)
           } else console.log("Got code", response.status, "for /my-permissions/")
         })
     } else if (authorized === false) {
-      requireSignIn()
+      requireSignIn(params.setState)
     }
   }
 
@@ -119,8 +126,8 @@ export interface RequestAndRequestor extends RequestState, Requestor {
 
 export function useRequest(path: string, request?: RequestInit): RequestAndRequestor {
   const [state, setState] = useState<RequestState>({ code: 0 })
-  const requestor = useRequestor(setState)
+  const requestor = useRequestor()
   const { protectedRequest } = requestor
-  useEffect(() => protectedRequest(path, request), [setState])
+  useEffect(() => protectedRequest({ path, request, setState }), [setState])
   return { ...requestor, ...state }
 }
