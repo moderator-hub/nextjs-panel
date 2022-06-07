@@ -95,7 +95,7 @@ export function useRequestor(path: string, request?: RequestInit): Requestor {
               dispatch(signIn(permissions))
               requestData()
             })
-          } else if (response.status === 401 || response.status === 403) {
+          } else if (response.status === 401 || response.status === 403 || response.status === 422) {
             requireSignIn()
           } else console.log("Got code", response.status, "for /my-permissions/")
         })

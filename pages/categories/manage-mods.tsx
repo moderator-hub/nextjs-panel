@@ -9,6 +9,7 @@ import { ProtectedPage } from "../../components/templates/page-template"
 import { TooltipIconButton, CardWrapper, CheckboxedItem, AreYouSureDialog, PasswordField } from "../../components/common/library"
 import { isEmpty, ModPerm } from "../../utils/other"
 import { useAppSelector } from "../../data/hooks"
+import { useRequestor } from "../../utils/requestor"
 
 interface ModeratorData {
   id: number
@@ -51,23 +52,14 @@ function schemaFactory(newEntry: boolean) {
     .required()
 }
 
-function EditModeratorDialog({ data, open, onClose }: ModeratorDialogProps) {
+interface EditModeratorDialogProps extends ModeratorDialogProps {
+  globalPermissions: ModPerm[]
+}
+
+function EditModeratorDialog({ data, open, onClose, globalPermissions }: EditModeratorDialogProps) {
   const newEntry = data === undefined
   const myPerms: undefined | number[] = useAppSelector(state => state.moderator.permissions?.map(item => item.id))
 
-  const [globalPermissions, setGlobalPermissions] = useState<ModPerm[]>([
-    { id: 1, name: "hi" },
-    { id: 2, name: "hi" },
-    { id: 3, name: "hi" },
-    { id: 4, name: "hi" },
-    { id: 5, name: "hi" },
-    { id: 6, name: "hi" },
-    { id: 7, name: "hi" },
-    { id: 8, name: "hi" },
-    { id: 9, name: "hi" },
-    { id: 10, name: "hi" },
-    { id: 11, name: "hi" },
-  ])  // TODO load from server or via props
   const [initialPermissions, setInitialPermissions] = useState<number[]>([
     1, 3, 6, 7, 10, 11
   ])  // TODO load from server or via props
@@ -194,13 +186,14 @@ function EditModeratorDialog({ data, open, onClose }: ModeratorDialogProps) {
         {newEntry ? "Create" : "Save"}
       </Button>
     </DialogContent>
-  </Dialog >
+  </Dialog>
 }
 
 const cardHeight: number = 60
 
 interface ModeratorCardProps {
   data: ModeratorData
+  globalPermissions: ModPerm[]
 }
 
 function SuperuserCard({ data }: ModeratorCardProps) {
@@ -217,14 +210,14 @@ function SuperuserCard({ data }: ModeratorCardProps) {
   </Tooltip>
 }
 
-function ModeratorCard({ data }: ModeratorCardProps) {
+function ModeratorCard({ data, globalPermissions }: ModeratorCardProps) {
   const [hover, setHover] = useState<boolean>(false)
   const [editing, setEditing] = useState<boolean>(false)
   const [removing, setRemoving] = useState<boolean>(false)
 
   return <>
     <RemoveModeratorDialog data={data} open={removing} onClose={() => setRemoving(false)} />
-    <EditModeratorDialog data={data} open={editing} onClose={() => setEditing(false)} />
+    <EditModeratorDialog data={data} open={editing} onClose={() => setEditing(false)} globalPermissions={globalPermissions} />
     <Paper
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -256,37 +249,28 @@ function ModeratorCard({ data }: ModeratorCardProps) {
   </>
 }
 
-function ModeratorCardSwitch({ data }: ModeratorCardProps) {
-  if (data.superuser) return <SuperuserCard data={data} />
-  return <ModeratorCard data={data} />
+function ModeratorCardSwitch(props: ModeratorCardProps) {
+  if (props.data.superuser) return <SuperuserCard {...props} />
+  return <ModeratorCard {...props} />
 }
 
 export default function ManageMods() {
-  const viewData: ModeratorData[] = [
-    { id: 0, username: "testing 1 testing 1 testing 1 testing 1 ", superuser: false },
-    { id: 1, username: "testing 2", superuser: false },
-    { id: 2, username: "testing 3", superuser: false },
-    { id: 3, username: "testing 4", superuser: true },
-    { id: 4, username: "testing 5", superuser: false },
-    { id: 5, username: "testing 6", superuser: false },
-    { id: 6, username: "testing 7", superuser: true },
-    { id: 7, username: "testing 8", superuser: false },
-    { id: 8, username: "testing 9", superuser: false },
-    { id: 9, username: "testing 0", superuser: false },
-  ]
+  const { data: globalPermissions, code: code1 } = useRequestor("/permissions/")
+  const { data: { results: moderators, "has-next": hasNext } = {}, code: code2 } = useRequestor("/moderators/?offset=0")
 
   const [creating, setCreating] = useState<boolean>(false)
 
-  return <ProtectedPage code={200} title="Moderator Management | MUB">
-    <EditModeratorDialog open={creating} onClose={() => setCreating(false)} />
+  return <ProtectedPage code={code1 === 200 ? code2 : code1} title="Moderator Management | MUB">
+    <EditModeratorDialog open={creating} onClose={() => setCreating(false)} globalPermissions={globalPermissions} />
     <Stack sx={{ maxWidth: 1200, width: "100%", m: "auto", pt: 4, px: 2, textAlign: "center" }} direction="column">
       <Typography variant="h4" sx={{ mb: 2 }}>
         Superuser: Moderator Management
       </Typography>
       <Grid container spacing={2}>
-        {viewData.map((data, index) => <Grid item xs={3} key={index}>
-          <ModeratorCardSwitch data={data} />
-        </Grid>
+        {(moderators as ModeratorData[])?.map(
+          (data, index) => <Grid item xs={3} key={index}>
+            <ModeratorCardSwitch data={data} globalPermissions={globalPermissions} />
+          </Grid>
         )}
         <Grid item xs={3}>
           <CardWrapper height={cardHeight} onClick={() => setCreating(true)}>
