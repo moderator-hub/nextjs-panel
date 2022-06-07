@@ -8,6 +8,7 @@ import { authorizedFetch } from "./fetcher"
 
 export interface RequestState {
   code: number,
+  error?: any,
   data?: any
 }
 
@@ -78,7 +79,7 @@ export function useRequestor(path: string, request?: RequestInit): Requestor {
             requireSignIn()
             break
           default:
-            setState({ code: response.status })
+            response.json().then(error => setState({ code: response.status, error }))
         }
       })
   }
