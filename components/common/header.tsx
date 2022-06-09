@@ -1,5 +1,6 @@
 import { AppBar, Button, Stack, Toolbar } from "@mui/material"
 import { useRouter } from "next/router"
+import { useTranslation } from "next-i18next"
 
 import { useAppSelector } from "../../data/hooks"
 import { signOut } from "../../data/slices/moderator"
@@ -25,9 +26,10 @@ function HeaderButton({ text, selected, onClick }: HeaderButtonProps) {
 }
 
 function HeaderItem({ href, text, path, selected }: HeaderItemProps) {
+  const { t } = useTranslation("common")
   return <Link href={href}>
     <HeaderButton
-      text={text}
+      text={t(text)}
       selected={selected === undefined ? href === path : selected}
     />
   </Link>
@@ -42,7 +44,7 @@ function AuthorizedHeader() {
   return <AppBar position="fixed" enableColorOnDark>
     <Toolbar variant="dense">
       <Stack direction="row" sx={{ width: "25%" }}>
-        <HeaderItem href="/" path={path} text="home" />
+        <HeaderItem href="/" path={path} text="header-home" />
       </Stack>
       <Stack direction="row" sx={{ width: "50%", justifyContent: "center" }}>
         {router.asPath !== "/" && permissions?.map((item, key) =>

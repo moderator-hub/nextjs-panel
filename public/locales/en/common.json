@@ -1,4 +1,8 @@
 {
   "app-name": "MUB",
-  "manage mods": "Manage Mods"
+  "manage mods": "Manage Mods",
+  "header-home": "Home",
+  "header-support": "Support",
+  "header-logout": "Log Out",
+  "header-signin": "Sign In"
 }
