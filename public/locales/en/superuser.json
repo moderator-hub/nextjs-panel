@@ -1,0 +1,16 @@
+{
+  "title": "Moderator Management",
+  "headline": "Superuser: Moderator Management",
+  "edit-perms": "Edit Permissions",
+  "remove-mod": "Remove Moderator",
+
+  "tooltip-superusers": "Use CLI to edit superusers",
+  "creating-mod-title": "New Moderator",
+  "editing-mod-title": "Editing Moderator",
+  "creating-mod-action": "Create",
+  "editing-mod-action": "Save",
+  "no-edit-perm": "Can't edit this permission",
+
+  "confirm-delete-question": "Do you really want to remove moderator {{username}}?",
+  "confirm-delete-alert": "You won't be able to undo this action"
+}
