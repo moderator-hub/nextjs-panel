@@ -1,7 +1,6 @@
 import { AppBar, Button, Stack, Toolbar } from "@mui/material"
 import { useRouter } from "next/router"
 import { useAppSelector } from "../../data/hooks"
-import { useAuthorized } from "../../utils/requestor"
 import { Link } from "./navigation"
 
 interface HeaderButtonProps {
@@ -75,7 +74,6 @@ function OutsiderHeader() {
 }
 
 export default function Header() {
-  const { authorized } = useAuthorized()
-
+  const authorized = useAppSelector(state => state.moderator.authorized)
   return authorized ? <AuthorizedHeader /> : <OutsiderHeader />
 }

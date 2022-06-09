@@ -1,10 +1,10 @@
 import { Box, Button, Container, Stack, Typography } from "@mui/material"
 
 import { ProtectedPage } from "../components/templates/page-template"
-import { useWindowState } from "../utils/effects"
 import { Link } from "../components/common/navigation"
-import { useAuthorized } from "../utils/requestor"
+import { useWindowState } from "../utils/effects"
 import { useAppSelector } from "../data/hooks"
+import { useAuthorized } from "../utils/requestor"
 
 export default function Home() {
   const height = useWindowState()[1]
@@ -24,7 +24,7 @@ export default function Home() {
           What&apos;s next?
         </Typography>
         {permissions === undefined || permissions?.length === 0
-          ? <Typography variant="body1" sx={{ mt: 1 }}> 
+          ? <Typography variant="body1" sx={{ mt: 1 }}>
             This account doesn&apos;t have any permissions
           </Typography>
           : <Container sx={{ justifyContent: "space-between", mt: 1 }}>
