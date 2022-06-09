@@ -1,5 +1,5 @@
 import Head from "next/head"
-import { CSSProperties, ReactNode} from "react"
+import { CSSProperties, ReactNode } from "react"
 import { Default404, DefaultError, DefaultLoading } from "./default-pages"
 
 interface BasicPageProps {
@@ -10,8 +10,8 @@ interface BasicPageProps {
   children?: ReactNode
 }
 
-export function BasicPage({ title = "MUB", favicon = "/favicon.ico", style, shift = true, children }: BasicPageProps) {
-  return <div style={{ marginTop: shift ? 50 : 0, ...style}}>
+export function BasicPage({ title, favicon = "/favicon.ico", style, shift = true, children }: BasicPageProps) {
+  return <div style={{ marginTop: shift ? 50 : 0, ...style }}>
     <Head>
       <title>{title}</title>
       <link rel="icon" href={favicon} />
@@ -36,11 +36,11 @@ interface ProtectedPageInnerProps {
 interface ProtectedPageProps extends BasicPageProps, ProtectedPageInnerProps {
 }
 
-function ProtectedPageInner({ 
-  code, 
+function ProtectedPageInner({
+  code,
   PageError = <DefaultError />,
   Page400,
-  Page403, 
+  Page403,
   Page404 = <Default404 />,
   Page422,
   Page500,
@@ -48,7 +48,7 @@ function ProtectedPageInner({
   PageLoading = <DefaultLoading />,
 }: ProtectedPageInnerProps, children: ReactNode) {
   switch (code) {
-    case 0: 
+    case 0:
     case 401: return PageLoading
     case 400: return Page400 === undefined ? PageError : Page400
     case 403: return Page403 === undefined ? PageError : Page403
@@ -60,7 +60,7 @@ function ProtectedPageInner({
   }
 }
 
-export function ProtectedPage({children, ...props}: ProtectedPageProps) {
+export function ProtectedPage({ children, ...props }: ProtectedPageProps) {
   return <BasicPage {...props}>
     {ProtectedPageInner(props, children)}
   </BasicPage>
