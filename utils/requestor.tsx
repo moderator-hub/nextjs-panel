@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useAppDispatch, useAppSelector } from "../data/hooks"
 import { fail } from "../data/slices/moderator"
 import { AppDispatch } from "../data/store"
-import { authorizedFetch } from "./fetcher"
+import { addBodyToRequest, authorizedFetch } from "./fetcher"
 
 export interface RequestState {
   code: number,
@@ -60,13 +60,7 @@ export function useRequestor(): Requestor {
 
   function protectedRequest({ path, request, body, setState }: RequestorPrams) {
     if (authorized) {
-      if (body !== undefined) {
-        request = {
-          body: JSON.stringify(body),
-          ...request,
-          headers: { "Content-Type": "application/json", ...request?.headers }
-        }
-      }
+      if (body !== undefined) request = addBodyToRequest(body, request)
       authorizedFetch(path, request).then(response => {
         switch (response.status) {
           case 200:
