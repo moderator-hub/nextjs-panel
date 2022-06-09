@@ -1,0 +1,9 @@
+{
+  "username": "Username",
+  "password": "Password",
+  "new-password": "New Password",
+  "too-long-error": "{{field}} is too long",
+  "required-error": "{{field}} is required",
+  "client-error": "Client Error",
+  "server-error": "Server Error"
+}

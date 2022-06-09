@@ -1,18 +1,20 @@
-import { Box, Button, Stack, TextField, Typography } from "@mui/material"
-
-import { useForm, Controller } from "react-hook-form"
+import { useState } from "react"
+import { Box, Button, Stack, Typography } from "@mui/material"
+import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
+import { useRouter } from "next/router"
+import { useTranslation } from "next-i18next"
+import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
 import { BasicPage } from "../components/templates/page-template"
-import { useWindowState } from "../utils/effects"
-import { outsiderJSONFetch } from "../utils/fetcher"
-import { useState } from "react"
+import { PasswordField } from "../components/common/library"
+import { ErrorDescription, ErrorFormText, TextFieldController } from "../components/common/forms"
 import { signIn } from "../data/slices/moderator"
 import { AppDispatch } from "../data/store"
 import { useAppDispatch, useAppSelector } from "../data/hooks"
-import { useRouter } from "next/router"
-import { PasswordField } from "../components/common/library"
+import { useWindowState } from "../utils/effects"
+import { outsiderJSONFetch } from "../utils/fetcher"
 
 const schema = yup
   .object({
@@ -29,6 +31,9 @@ interface SignInErrors {
 }
 
 export default function SignInPage() {
+  const { t } = useTranslation("signin")
+  const { t: tCommon } = useTranslation("common")
+
   const height = useWindowState()[1]
 
   const router = useRouter()
@@ -42,70 +47,42 @@ export default function SignInPage() {
   const passwordError = !!errors?.password?.type || fetchErrors.wrongPassword
   const anyError = usernameError || passwordError || fetchErrors.clientError || fetchErrors.serverError
 
-  const errorDescription: string[] = []
+  const errorDescription: ErrorDescription[] = []
   if (anyError) {
     if (usernameError) {
-      if (errors?.username?.type === "max") errorDescription.push("Username is too long")
-      if (errors?.username?.type === "required") errorDescription.push("Username is required")
-      if (fetchErrors.moderatorNotFound) errorDescription.push("Moderator not found")
+      if (errors?.username?.type === "max") errorDescription.push({ field: "username", type: "too-long" })
+      if (errors?.username?.type === "required") errorDescription.push({ field: "username", type: "required" })
+      if (fetchErrors.moderatorNotFound) errorDescription.push({ type: "fetch", description: t("mod-not-found") })
     }
     if (passwordError) {
-      if (errors?.password?.type === "max") errorDescription.push("Password is too long")
-      if (errors?.password?.type === "required") errorDescription.push("Password is required")
-      if (fetchErrors.wrongPassword) errorDescription.push("Wrong password")
+      if (errors?.password?.type === "max") errorDescription.push({ field: "password", type: "too-long" })
+      if (errors?.password?.type === "required") errorDescription.push({ field: "password", type: "required" })
+      if (fetchErrors.wrongPassword) errorDescription.push({ type: "fetch", description: t("wrong-password") })
     }
-    if (fetchErrors.clientError) errorDescription.push("Client error")
-    if (fetchErrors.serverError) errorDescription.push("Server error")
+    if (fetchErrors.clientError) errorDescription.push({ type: "fetch", descriptionKey: "client-error" })
+    if (fetchErrors.serverError) errorDescription.push({ type: "fetch", descriptionKey: "server-error" })
   }
 
-  return <BasicPage shift={false} style={{ overflow: "hidden" }}>
+  return <BasicPage title={tCommon("app-name")} shift={false} style={{ overflow: "hidden" }}>
     <Box sx={{ display: "flex", alignContent: "center", justifyContent: "center", height: height }}>
       <Stack component="form" sx={{ maxWidth: 500, width: "100%", m: "auto", textAlign: "center" }} direction="column">
         <Typography variant="h4">
-          Sign In
+          {t("signin-title")}
         </Typography>
-        <Controller
+        <TextFieldController
           name="username"
           control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <TextField
-              sx={{ width: "100%", }}
-              label="Username"
-              error={usernameError}
-              fullWidth
-              margin="normal"
-              {...field}
-              ref={null}
-            />
-          )}
+          error={usernameError}
         />
-        <Controller
+        <TextFieldController
           name="password"
           control={control}
-          defaultValue=""
-          render={({ field }) => (
-            <PasswordField
-              sx={{ width: "100%", }}
-              label="Password"
-              error={passwordError}
-              fullWidth
-              margin="normal"
-              {...field}
-              ref={null}
-            />
-          )}
+          error={passwordError}
+          Field={PasswordField}
         />
-        {anyError && errorDescription
-          .map((item, key) => <Typography
-            sx={{ mt: 1 }}
-            variant="body1"
-            color="error"
-            key={key}
-          >
-            {item}
-          </Typography>)
-        }
+        <ErrorFormText
+          errors={errorDescription}
+        />
         <Button
           variant="contained"
           sx={{ mx: "37%", mt: anyError ? 1 : 2 }}
@@ -136,9 +113,15 @@ export default function SignInPage() {
               })
           })}
         >
-          SIGN IN
+          {t("signin-action")}
         </Button>
       </Stack>
     </Box>
   </BasicPage>
 }
+
+export const getStaticProps = async ({ locale }: { locale: string }) => ({
+  props: {
+    ...await serverSideTranslations(locale, ["common", "forms", "signin"]),
+  },
+})
