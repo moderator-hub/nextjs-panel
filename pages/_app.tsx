@@ -3,6 +3,7 @@ import { Provider } from "react-redux"
 import { ThemeProvider, CssBaseline, createTheme, ThemeOptions, useMediaQuery } from "@mui/material"
 import { deepPurple, teal } from "@mui/material/colors"
 import type { AppProps } from "next/app"
+import { appWithTranslation } from "next-i18next"
 
 import { DefaultLoading } from "../components/templates/default-pages"
 import Header from "../components/common/header"
@@ -59,11 +60,11 @@ function AppInner({ Component, pageProps }: AppProps) {
   </>
 }
 
-export default function App(props: AppProps) {
+export default appWithTranslation((props: AppProps) => {
   return <ThemeProvider theme={useMediaQuery("(prefers-color-scheme: dark)") ? darkTheme : lightTheme}>
     <Provider store={store}>
       <CssBaseline />
       <AppInner {...props} />
     </Provider>
   </ThemeProvider>
-}
+})
