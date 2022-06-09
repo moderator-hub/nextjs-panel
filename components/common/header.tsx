@@ -1,7 +1,10 @@
 import { AppBar, Button, Stack, Toolbar } from "@mui/material"
 import { useRouter } from "next/router"
+
 import { useAppSelector } from "../../data/hooks"
-import { useAuthorized } from "../../utils/requestor"
+import { signOut } from "../../data/slices/moderator"
+import { authorizedFetch } from "../../utils/fetcher"
+import { useRequestorBase } from "../../utils/requestor"
 import { Link } from "./navigation"
 
 interface HeaderButtonProps {
@@ -31,7 +34,7 @@ function HeaderItem({ href, text, path, selected }: HeaderItemProps) {
 }
 
 function AuthorizedHeader() {
-  const router = useRouter()
+  const { router, dispatch } = useRequestorBase()
   const path: string = router.asPath
 
   const permissions = useAppSelector(state => state.moderator.permissions)
@@ -54,7 +57,11 @@ function AuthorizedHeader() {
       </Stack>
       <Stack direction="row-reverse" sx={{ width: "25%" }}>
         <HeaderItem text="support" href="/support" path={path} />
-        <HeaderButton text="log out" onClick={() => { console.log("lol") }} />
+        <HeaderButton text="log out" onClick={() => {
+          authorizedFetch("/sign-out/", { method: "post" })
+          dispatch(signOut())
+          router.push("/signin/")
+        }} />
       </Stack>
     </Toolbar>
   </AppBar>
@@ -75,7 +82,6 @@ function OutsiderHeader() {
 }
 
 export default function Header() {
-  const { authorized } = useAuthorized()
-
+  const authorized = useAppSelector(state => state.moderator.authorized)
   return authorized ? <AuthorizedHeader /> : <OutsiderHeader />
 }

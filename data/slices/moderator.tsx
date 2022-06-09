@@ -18,9 +18,9 @@ export const moderatorSlice = createSlice({
       state.permissions = [...action.payload]
       state.retryPath = undefined
     },
-    fail: (state, action: PayloadAction<string>) => {
+    fail: (state, action: PayloadAction<string | undefined>) => {
       state.authorized = false
-      state.retryPath = action.payload
+      if (action.payload !== undefined) state.retryPath = action.payload
     },
     signOut: state => {
       state.authorized = false

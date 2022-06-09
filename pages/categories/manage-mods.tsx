@@ -8,11 +8,9 @@ import * as yup from "yup"
 
 import { TooltipIconButton, CardWrapper, CheckboxedItem, AreYouSureDialog, PasswordField } from "../../components/common/library"
 import { ProtectedPage } from "../../components/templates/page-template"
-import { authorizedFetch, authorizedJSONFetch } from "../../utils/fetcher"
 import { RequestorPrams, RequestState, useRequest, useRequestor } from "../../utils/requestor"
 import { isEmpty, ModPerm } from "../../utils/other"
 import { useAppSelector } from "../../data/hooks"
-import { useRouter } from "next/router"
 
 interface ModeratorData {
   id: number
@@ -33,8 +31,6 @@ interface RemoveModeratorDialogProps extends ModeratorDialogProps {
 }
 
 function RemoveModeratorDialog({ data, open, onClose, updateModerator, protectedRequest }: RemoveModeratorDialogProps) {
-  const router = useRouter()
-
   function confirm() {
     protectedRequest({
       path: `/moderators/${data.id}/`,
@@ -298,16 +294,17 @@ function ModeratorCardSwitch(props: ModeratorCardProps) {
 export default function ManageMods() {
   const [creating, setCreating] = useState<boolean>(false)
 
-  const { data: globalPermissions, code: code1 } = useRequest("/permissions/")
+  const { data: globalPermissions, code: code1, protectedRequest } = useRequest("/permissions/")
 
   const [moderators, setModerators] = useState<ModeratorData[]>([])
   const [hasNext, setHasNext] = useState<boolean>(false)
   const [code2, setCode2] = useState<number>(0)
 
-  const { protectedRequest } = useRequestor()
-  function setAll({ code, data: { results, "has-next": hasMore } }: RequestState) {
-    setModerators([...moderators, ...results.map((x: any) => ({ ...x, permissions: x.permissions.map((p: ModPerm) => p.id) }))])
-    setHasNext(hasMore)
+  function setAll({ code, data: { results, "has-next": hasMore } = {} }: RequestState) {
+    if (code === 200) {
+      setModerators([...moderators, ...results.map((x: any) => ({ ...x, permissions: x.permissions.map((p: ModPerm) => p.id) }))])
+      setHasNext(hasMore)
+    }
     setCode2(code)
   }
 
