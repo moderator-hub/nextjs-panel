@@ -2,7 +2,7 @@ import { NextRouter, useRouter } from "next/router"
 import { useEffect, useState } from "react"
 
 import { useAppDispatch, useAppSelector } from "../data/hooks"
-import { fail, signIn } from "../data/slices/moderator"
+import { fail } from "../data/slices/moderator"
 import { AppDispatch } from "../data/store"
 import { authorizedFetch } from "./fetcher"
 
@@ -12,39 +12,33 @@ export interface RequestState {
   data?: any
 }
 
-export interface Authorized {
-  authorized?: boolean
+export interface RequestorBase {
   dispatch: AppDispatch
   router: NextRouter
 }
 
-export function useAuthorized(): Authorized {
-  const router = useRouter()
+export interface Authorized extends RequestorBase {
+  authorized?: boolean
+}
 
-  const dispatch: AppDispatch = useAppDispatch()
+export function requireSignIn(router: NextRouter, dispatch: AppDispatch) {
+  if (router.asPath !== "/signin") {
+    dispatch(fail(router.asPath))
+    router.push("/signin")
+  } else dispatch(fail("/"))
+}
+
+export function useRequestorBase(): RequestorBase {
+  return { router: useRouter(), dispatch: useAppDispatch() }
+}
+
+export function useAuthorized(): Authorized {
+  const { router, dispatch } = useRequestorBase()
   const authorized = useAppSelector(state => state.moderator.authorized)
 
-  function requireSignIn() {
-    if (router.asPath !== "/signin") {
-      dispatch(fail(router.asPath))
-      router.push("/signin")
-    } else dispatch(fail("/"))
-  }
-
   useEffect(() => {
-    if (authorized === undefined) {
-      authorizedFetch("/my-permissions/", { method: "get", })
-        .then(response => {
-          if (response.status === 200) {
-            response.json().then(permissions => dispatch(signIn(permissions)))
-          } else if (response.status === 401 || response.status === 403) {
-            requireSignIn()
-          } else console.log("Got code", response.status, "for /my-permissions/")
-        })
-    } else if (authorized === false) {
-      requireSignIn()
-    }
-  })
+    if (!authorized) requireSignIn(router, dispatch)
+  }, [router, dispatch, authorized])
 
   return { authorized, dispatch, router }
 }
@@ -61,59 +55,34 @@ export interface Requestor extends Authorized {
 }
 
 export function useRequestor(): Requestor {
-  const router = useRouter()
-
-  const dispatch: AppDispatch = useAppDispatch()
+  const { router, dispatch } = useRequestorBase()
   const authorized = useAppSelector(state => state.moderator.authorized)
 
-  function requireSignIn(setState: (state: RequestState) => void) {
-    setState({ code: 401 })
-    if (router.asPath !== "/signin") {
-      dispatch(fail(router.asPath))
-      router.push("/signin")
-    } else dispatch(fail("/"))
-  }
-
-  function requestData({ path, request, body, setState }: RequestorPrams) {
-    if (body !== undefined) {
-      request = {
-        body: JSON.stringify(body),
-        ...request,
-        headers: { "Content-Type": "application/json", ...request?.headers }
+  function protectedRequest({ path, request, body, setState }: RequestorPrams) {
+    if (authorized) {
+      if (body !== undefined) {
+        request = {
+          body: JSON.stringify(body),
+          ...request,
+          headers: { "Content-Type": "application/json", ...request?.headers }
+        }
       }
-    }
-    authorizedFetch(path, request)
-      .then(response => {
+      authorizedFetch(path, request).then(response => {
         switch (response.status) {
           case 200:
             response.json().then(data => setState({ code: response.status, data }))
             break
           case 401:
-            requireSignIn(setState)
+          case 422:
+            requireSignIn(router, dispatch)
             break
           default:
             response.json().then(error => setState({ code: response.status, error }))
         }
       })
-  }
-
-  function protectedRequest(params: RequestorPrams) {
-    if (authorized === true) {
-      requestData(params)
-    } else if (authorized === undefined) {
-      authorizedFetch("/my-permissions/", { method: "get", })
-        .then(response => {
-          if (response.status === 200) {
-            response.json().then(permissions => {
-              dispatch(signIn(permissions))
-              requestData(params)
-            })
-          } else if (response.status === 401 || response.status === 403 || response.status === 422) {
-            requireSignIn(params.setState)
-          } else console.log("Got code", response.status, "for /my-permissions/")
-        })
-    } else if (authorized === false) {
-      requireSignIn(params.setState)
+    } else {
+      setState({ code: 401 })
+      requireSignIn(router, dispatch)
     }
   }
 
