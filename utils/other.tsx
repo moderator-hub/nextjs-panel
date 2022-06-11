@@ -3,7 +3,6 @@ export function isEmpty(value: any): boolean {
 }
 
 export interface InterfaceSettings {
-  locale?: string
   mode?: string
 }
 

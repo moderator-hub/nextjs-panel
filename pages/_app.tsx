@@ -61,22 +61,11 @@ function AppInner({ Component, pageProps }: AppProps) {
       authorizedFetch("/my-settings/", { method: "get", })
         .then(response => {
           if (response.status === 200) {
-            return response.json().then((data: ModeratorData) => {
-              dispatch(signIn(data))
-              router.push(router.asPath, router.asPath, { locale: data.locale })
-            })
+            return response.json().then((data: ModeratorData) => dispatch(signIn(data)))
           } else if (response.status === 401 || response.status === 403 || response.status === 422) {
             dispatch(fail())
           } else console.log("Got code", response.status, "for /my-settings/")
         })
-    } else {
-      const localeFromLocalStorage = window.localStorage.getItem("mub-interface-locale")
-      if (localeFromLocalStorage !== null
-        && languages.map(v => v.locale).includes(localeFromLocalStorage)
-        && localeFromLocalStorage !== router.locale) {
-        dispatch(settings({ locale: localeFromLocalStorage }))
-        router.push(router.asPath, router.asPath, { locale: localeFromLocalStorage })
-      }
     }
   }, [router, dispatch])
 

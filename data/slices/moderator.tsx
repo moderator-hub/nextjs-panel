@@ -4,12 +4,11 @@ import { ModPerm, InterfaceSettings, ModeratorData } from '../../utils/other'
 interface ModeratorState {
   authorized?: boolean
   permissions?: ModPerm[]
-  locale: string
   mode?: string
   retryPath?: string
 }
 
-const initialState = { locale: "en", mode: "dark" } as ModeratorState
+const initialState = {} as ModeratorState
 
 export const moderatorSlice = createSlice({
   name: "moderator",
@@ -19,7 +18,6 @@ export const moderatorSlice = createSlice({
       state.authorized = true
       state.retryPath = undefined
       state.permissions = [...action.payload.permissions]
-      if (action.payload.locale !== undefined) state.locale = action.payload.locale
       if (action.payload.mode !== undefined) state.mode = action.payload.mode
     },
     fail: (state, action: PayloadAction<string | undefined>) => {
@@ -32,7 +30,6 @@ export const moderatorSlice = createSlice({
       state.permissions = undefined
     },
     settings: (state, action: PayloadAction<InterfaceSettings>) => {
-      if (action.payload.locale !== undefined) state.locale = action.payload.locale
       if (action.payload.mode !== undefined) state.mode = action.payload.mode
     }
   }

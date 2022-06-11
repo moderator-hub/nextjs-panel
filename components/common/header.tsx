@@ -80,7 +80,6 @@ function SettingsDrawer({ open, setOpen }: SettingsDrawerProps) {
   const mode = useAppSelector(state => state.moderator.mode)
 
   const [serverMode, setServerMode] = useState(mode)
-  const [serverLocale, setServerLocale] = useState(router.locale)
 
   function switchMode(mode: string): void {
     dispatch(settings({ mode }))
@@ -88,52 +87,45 @@ function SettingsDrawer({ open, setOpen }: SettingsDrawerProps) {
 
   function saveLocalStorage() {
     setServerMode(mode)
-    setServerLocale(router.locale)
     window.localStorage.setItem("mub-interface-mode", mode || "dark")
   }
 
-  function saveAndClose(close: boolean, localeChanged: boolean) {
-    return (onSuccess?: () => void) => {
-      const changed = serverMode !== mode || localeChanged
+  function saveAndClose(close: boolean) {
+    return () => {
+      const changed = serverMode !== mode
       if (authorized && changed) {
         protectedRequest({
           path: "/my-settings/",
           body: {
-            mode: mode === serverMode ? undefined : mode,
-            locale: localeChanged ? router.locale : undefined
+            mode: mode === serverMode ? undefined : mode
           },
           request: { method: "post" },
           setState: ({ code }) => {
             if (code === 200) {
               saveLocalStorage()
               if (close) setOpen(false)
-              if (onSuccess) onSuccess()
             }
           }
         })
       } else {
         if (changed) saveLocalStorage()
         if (close) setOpen(false)
-        if (onSuccess) onSuccess()
       }
     }
   }
-  useEffect(() => saveAndClose(false, false))
+  useEffect(() => saveAndClose(false))
 
   function switchLocale(locale: string): void {
     if (locale !== router.locale) {
-      saveAndClose(false, true)(() => {
-        dispatch(settings({ locale }))
-        window.localStorage.setItem("mub-interface-locale", locale || "en")
-        router.push(router.asPath, router.asPath, { locale })
-      })
+      saveAndClose(false)()
+      router.push(router.asPath, router.asPath, { locale })
     }
   }
 
   return <SwipeableDrawer
     anchor="right"
     open={open}
-    onClose={() => saveAndClose(true, false)()}
+    onClose={saveAndClose(true)}
     onOpen={() => setOpen(true)}
   >
     <Stack
