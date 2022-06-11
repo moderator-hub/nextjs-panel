@@ -4,9 +4,9 @@ import { useTranslation } from "next-i18next"
 import { Settings as SettingsIcon, ContactSupport as SupportIcon, Logout as LogoutIcon, LightMode as LightModeIcon, DarkMode as DarkModeIcon, SvgIconComponent } from "@mui/icons-material"
 
 import { useAppSelector } from "../../data/hooks"
-import { signOut } from "../../data/slices/moderator"
+import { signOut, settings } from "../../data/slices/moderator"
 import { authorizedFetch } from "../../utils/fetcher"
-import { useRequestorBase } from "../../utils/requestor"
+import { useRequestor, useRequestorBase } from "../../utils/requestor"
 import { Link } from "./navigation"
 import { TooltipIconButton } from "./library"
 import { languages } from "../../data/static"
@@ -69,15 +69,99 @@ function SettingsBlock({ title, children }: SettingsBlockProps) {
   </>
 }
 
-export default function Header() {
-  const { t, i18n } = useTranslation("common")
+interface SettingsDrawerProps {
+  open: boolean
+  setOpen: (v: boolean) => void
+}
 
-  const authorized = useAppSelector(state => state.moderator.authorized)
-  const permissions = useAppSelector(state => state.moderator.permissions)
-  const mode = "dark"  // TODO put into state.moderator
+function SettingsDrawer({ open, setOpen }: SettingsDrawerProps) {
+  const { t, i18n } = useTranslation("common")
+  const { authorized, dispatch, protectedRequest } = useRequestor()
+  const mode = useAppSelector(state => state.moderator.mode)
+
+  const [newMode, setNewMode] = useState(() => mode)
+  const [newLocale, setNewLocale] = useState(() => i18n.language)
+
+  function switchMode(mode: string): void {
+    setNewMode(mode)
+    dispatch(settings({ mode }))
+  }
+
+  function switchLocale(locale: string): void {
+    setNewLocale(locale)
+    i18n.changeLanguage(locale)
+    dispatch(settings({ locale }))
+  }
+
+  function saveAndClose() {
+    setOpen(false)
+    console.log("hi")
+    if (authorized) {
+      // TODO protectedRequest
+    }
+  }
+
+  return <SwipeableDrawer
+    anchor="right"
+    open={open}
+    onClose={saveAndClose}
+    onOpen={() => setOpen(true)}
+  >
+    <Stack
+      sx={{ width: 300, px: 2 }}
+      direction="column"
+    >
+      <Typography variant="h5" sx={{ pt: 2 }}>
+        Settings
+      </Typography>
+      <SettingsBlock title={t("settings-block-mode")}>
+        <ButtonGroup variant="outlined" fullWidth>
+          {[
+            { text: "light", Icon: LightModeIcon },
+            { text: "dark", Icon: DarkModeIcon }
+          ].map(({ text, Icon }, key) => (
+            <Button
+              key={key}
+              startIcon={<Icon />}
+              sx={{ textTransform: "none" }}
+              onClick={() => switchMode(text)}
+              variant={text === newMode ? "contained" : "outlined"}
+            >
+              <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                {t("settings-" + text + "-mode")}
+              </Typography>
+            </Button>
+          ))}
+        </ButtonGroup>
+      </SettingsBlock>
+      <SettingsBlock title={t("settings-block-language")}>
+        <ButtonGroup variant="outlined" fullWidth orientation="vertical">
+          {languages.map(({ name, locale }, key) => (
+            <Button
+              key={key}
+              sx={{ textTransform: "none" }}
+              onClick={() => switchLocale(locale)}
+              variant={locale === newLocale ? "contained" : "outlined"}
+            >
+              <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                {name}
+              </Typography>
+            </Button>
+          ))}
+        </ButtonGroup>
+      </SettingsBlock>
+    </Stack>
+  </SwipeableDrawer>
+}
+
+export default function Header() {
+  const { t } = useTranslation("common")
 
   const { router, dispatch } = useRequestorBase()
   const path: string = router.asPath
+
+  const authorized = useAppSelector(state => state.moderator.authorized)
+  const permissions = useAppSelector(state => state.moderator.permissions)
 
   function doSignOut() {
     authorizedFetch("/sign-out/", { method: "post" })
@@ -88,55 +172,7 @@ export default function Header() {
   const [open, setOpen] = useState<boolean>(false)
 
   return <AppBar position="fixed" enableColorOnDark>
-    <SwipeableDrawer
-      anchor="right"
-      open={open}
-      onClose={() => setOpen(false)}
-      onOpen={() => setOpen(true)}
-    >
-      <Stack
-        sx={{ width: 300, px: 2 }}
-        direction="column"
-      >
-        <Typography variant="h5" sx={{ pt: 2 }}>
-          Settings
-        </Typography>
-        <SettingsBlock title={t("settings-block-mode")}>
-          <ButtonGroup variant="outlined" fullWidth>
-            {[
-              { text: "light", Icon: LightModeIcon },
-              { text: "dark", Icon: DarkModeIcon }
-            ].map(({ text, Icon }, key) => (
-              <Button
-                key={key}
-                startIcon={<Icon />}
-                sx={{ textTransform: "none" }}
-                variant={text === mode ? "contained" : "outlined"}
-              >
-                <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                  {t("settings-" + text + "-mode")}
-                </Typography>
-              </Button>
-            ))}
-          </ButtonGroup>
-        </SettingsBlock>
-        <SettingsBlock title={t("settings-block-language")}>
-          <ButtonGroup variant="outlined" fullWidth orientation="vertical">
-            {languages.map(({ name, locale }, key) => (
-              <Button
-                key={key}
-                sx={{ textTransform: "none" }}
-                variant={locale === i18n.language ? "contained" : "outlined"}
-              >
-                <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                  {name}
-                </Typography>
-              </Button>
-            ))}
-          </ButtonGroup>
-        </SettingsBlock>
-      </Stack>
-    </SwipeableDrawer>
+    <SettingsDrawer open={open} setOpen={setOpen} />
     <Toolbar variant="dense">
       <Grid
         container

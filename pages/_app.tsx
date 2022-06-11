@@ -3,7 +3,7 @@ import { Provider } from "react-redux"
 import { ThemeProvider, CssBaseline, createTheme, ThemeOptions, useMediaQuery } from "@mui/material"
 import { deepPurple, teal } from "@mui/material/colors"
 import type { AppProps } from "next/app"
-import { appWithTranslation } from "next-i18next"
+import { appWithTranslation, useTranslation } from "next-i18next"
 
 import { DefaultLoading } from "../components/templates/default-pages"
 import Header from "../components/common/header"
@@ -12,6 +12,7 @@ import { store } from "../data/store"
 import { useAppSelector } from "../data/hooks"
 import { authorizedFetch } from "../utils/fetcher"
 import { useRequestorBase } from "../utils/requestor"
+import { ModeratorData } from "../utils/other"
 
 const common = {
   typography: {
@@ -36,35 +37,40 @@ const lightTheme = createTheme({
 } as ThemeOptions)
 
 function AppInner({ Component, pageProps }: AppProps) {
+  const { i18n } = useTranslation()
   const { router, dispatch } = useRequestorBase()
+
   const authorized = useAppSelector(state => state.moderator.authorized)
+  const mode = useAppSelector(state => state.moderator.mode)
 
   useEffect(() => {
     if (authorized === undefined) {
       authorizedFetch("/my-settings/", { method: "get", })
         .then(response => {
           if (response.status === 200) {
-            response.json().then(data => dispatch(signIn(data)))
+            return response.json().then((data: ModeratorData) => {
+              dispatch(signIn(data))
+              i18n.changeLanguage(data.locale)
+            })
           } else if (response.status === 401 || response.status === 403 || response.status === 422) {
             dispatch(fail())
           } else console.log("Got code", response.status, "for /my-settings/")
         })
     }
-  }, [router, dispatch, authorized])
+  }, [router, dispatch])
 
-  if (authorized === undefined) return <DefaultLoading />
-
-  return <>
+  return <ThemeProvider theme={mode === "light" ? lightTheme : darkTheme}>
+    <CssBaseline />
     <Header />
-    <Component {...pageProps} />
-  </>
+    {authorized === undefined
+      ? <DefaultLoading />
+      : <Component {...pageProps} />
+    }
+  </ThemeProvider>
 }
 
 export default appWithTranslation((props: AppProps) => {
-  return <ThemeProvider theme={useMediaQuery("(prefers-color-scheme: dark)") ? darkTheme : lightTheme}>
-    <Provider store={store}>
-      <CssBaseline />
-      <AppInner {...props} />
-    </Provider>
-  </ThemeProvider>
+  return <Provider store={store}>
+    <AppInner {...props} />
+  </Provider>
 })

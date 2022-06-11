@@ -1,11 +1,11 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { ModPerm, ModeratorData } from '../../utils/other'
+import { ModPerm, InterfaceSettings, ModeratorData } from '../../utils/other'
 
 interface ModeratorState {
   authorized?: boolean
   permissions?: ModPerm[]
   locale: string
-  mode: string
+  mode?: string
   retryPath?: string
 }
 
@@ -16,12 +16,11 @@ export const moderatorSlice = createSlice({
   initialState,
   reducers: {
     signIn: (state, action: PayloadAction<ModeratorData>) => {
-      console.log(action.payload)
       state.authorized = true
       state.retryPath = undefined
       state.permissions = [...action.payload.permissions]
-      state.locale = action.payload.locale
-      state.mode = action.payload.mode
+      if (action.payload.locale !== undefined) state.locale = action.payload.locale
+      if (action.payload.mode !== undefined) state.mode = action.payload.mode
     },
     fail: (state, action: PayloadAction<string | undefined>) => {
       state.authorized = false
@@ -32,9 +31,13 @@ export const moderatorSlice = createSlice({
       state.retryPath = undefined
       state.permissions = undefined
     },
+    settings: (state, action: PayloadAction<InterfaceSettings>) => {
+      if (action.payload.locale !== undefined) state.locale = action.payload.locale
+      if (action.payload.mode !== undefined) state.mode = action.payload.mode
+    }
   }
 })
 
-export const { signIn, fail, signOut } = moderatorSlice.actions
+export const { signIn, fail, signOut, settings } = moderatorSlice.actions
 
 export default moderatorSlice.reducer
