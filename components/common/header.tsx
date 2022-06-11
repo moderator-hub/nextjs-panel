@@ -1,15 +1,15 @@
-import { ReactNode, useState } from "react"
+import { ReactNode, useEffect, useState } from "react"
 import { AppBar, Button, ButtonGroup, Divider, Grid, ListItemIcon, ListItemText, MenuItem, MenuItemProps, Stack, SwipeableDrawer, Toolbar, Typography } from "@mui/material"
 import { useTranslation } from "next-i18next"
 import { Settings as SettingsIcon, ContactSupport as SupportIcon, Logout as LogoutIcon, LightMode as LightModeIcon, DarkMode as DarkModeIcon, SvgIconComponent } from "@mui/icons-material"
 
 import { useAppSelector } from "../../data/hooks"
 import { signOut, settings } from "../../data/slices/moderator"
+import { languages } from "../../data/static"
 import { authorizedFetch } from "../../utils/fetcher"
 import { useRequestor, useRequestorBase } from "../../utils/requestor"
 import { Link } from "./navigation"
 import { TooltipIconButton } from "./library"
-import { languages } from "../../data/static"
 
 interface HeaderButtonProps {
   text: string
@@ -75,46 +75,65 @@ interface SettingsDrawerProps {
 }
 
 function SettingsDrawer({ open, setOpen }: SettingsDrawerProps) {
-  const { t, i18n } = useTranslation("common")
-  const { authorized, dispatch, protectedRequest } = useRequestor()
+  const { t } = useTranslation("common")
+  const { authorized, router, dispatch, protectedRequest } = useRequestor()
   const mode = useAppSelector(state => state.moderator.mode)
 
   const [serverMode, setServerMode] = useState(mode)
-  const [serverLocale, setServerLocale] = useState(i18n.language)
+  const [serverLocale, setServerLocale] = useState(router.locale)
 
   function switchMode(mode: string): void {
     dispatch(settings({ mode }))
   }
 
-  function switchLocale(locale: string): void {
-    i18n.changeLanguage(locale)
-    dispatch(settings({ locale }))
+  function saveLocalStorage() {
+    setServerMode(mode)
+    setServerLocale(router.locale)
+    window.localStorage.setItem("mub-interface-mode", mode || "dark")
   }
 
-  function saveAndClose() {
-    if (authorized && (serverMode !== mode || serverLocale !== i18n.language)) {
-      protectedRequest({
-        path: "/my-settings/",
-        body: {
-          mode: mode === serverMode ? undefined : mode,
-          locale: serverLocale === i18n.language ? undefined : i18n.language
-        },
-        request: { method: "post" },
-        setState: ({ code }) => {
-          if (code === 200) {
-            setServerMode(mode)
-            setServerLocale(i18n.language)
-            setOpen(false)
+  function saveAndClose(close: boolean, localeChanged: boolean) {
+    return (onSuccess?: () => void) => {
+      const changed = serverMode !== mode || localeChanged
+      if (authorized && changed) {
+        protectedRequest({
+          path: "/my-settings/",
+          body: {
+            mode: mode === serverMode ? undefined : mode,
+            locale: localeChanged ? router.locale : undefined
+          },
+          request: { method: "post" },
+          setState: ({ code }) => {
+            if (code === 200) {
+              saveLocalStorage()
+              if (close) setOpen(false)
+              if (onSuccess) onSuccess()
+            }
           }
-        }
+        })
+      } else {
+        if (changed) saveLocalStorage()
+        if (close) setOpen(false)
+        if (onSuccess) onSuccess()
+      }
+    }
+  }
+  useEffect(() => saveAndClose(false, false))
+
+  function switchLocale(locale: string): void {
+    if (locale !== router.locale) {
+      saveAndClose(false, true)(() => {
+        dispatch(settings({ locale }))
+        window.localStorage.setItem("mub-interface-locale", locale || "en")
+        router.push(router.asPath, router.asPath, { locale })
       })
-    } else setOpen(false)
+    }
   }
 
   return <SwipeableDrawer
     anchor="right"
     open={open}
-    onClose={saveAndClose}
+    onClose={() => saveAndClose(true, false)()}
     onOpen={() => setOpen(true)}
   >
     <Stack
@@ -151,7 +170,7 @@ function SettingsDrawer({ open, setOpen }: SettingsDrawerProps) {
               key={key}
               sx={{ textTransform: "none" }}
               onClick={() => switchLocale(locale)}
-              variant={locale === i18n.language ? "contained" : "outlined"}
+              variant={locale === router.locale ? "contained" : "outlined"}
             >
               <Typography variant="body1" sx={{ fontWeight: "bold" }}>
                 {name}
@@ -210,7 +229,7 @@ export default function Header() {
           </>
           : <Grid item xs>
             <Stack direction="row" sx={{ width: "100%" }}>
-              <HeaderItem text="sign in" href="/signin" path={path} />
+              <HeaderItem text="header-signin" href="/signin" path={path} />
             </Stack>
           </Grid>
         }

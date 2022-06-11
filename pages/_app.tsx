@@ -13,6 +13,7 @@ import { useAppSelector } from "../data/hooks"
 import { authorizedFetch } from "../utils/fetcher"
 import { useRequestorBase } from "../utils/requestor"
 import { ModeratorData } from "../utils/other"
+import { languages } from "../data/static"
 
 const common = {
   typography: {
@@ -37,7 +38,6 @@ const lightTheme = createTheme({
 } as ThemeOptions)
 
 function AppInner({ Component, pageProps }: AppProps) {
-  const { i18n } = useTranslation()
   const browserThemeDark = useMediaQuery("(prefers-color-scheme: dark)")
   const browserThemeLight = useMediaQuery("(prefers-color-scheme: light)")
 
@@ -46,8 +46,13 @@ function AppInner({ Component, pageProps }: AppProps) {
   const mode = useAppSelector(state => state.moderator.mode)
 
   useEffect(() => {
-    if (authorized !== undefined && mode === undefined && browserThemeDark != browserThemeLight) {
-      dispatch(settings({ mode: browserThemeDark ? "dark" : "light" }))
+    if (authorized !== undefined) {
+      const modeFromLocalStorage = window.localStorage.getItem("mub-interface-mode")
+      if (modeFromLocalStorage === "dark" || modeFromLocalStorage === "light") {
+        dispatch(settings({ mode: modeFromLocalStorage }))
+      } else if (mode === undefined && browserThemeDark != browserThemeLight) {
+        dispatch(settings({ mode: browserThemeDark ? "dark" : "light" }))
+      }
     }
   }, [dispatch, authorized, browserThemeDark, browserThemeLight])
 
@@ -58,12 +63,20 @@ function AppInner({ Component, pageProps }: AppProps) {
           if (response.status === 200) {
             return response.json().then((data: ModeratorData) => {
               dispatch(signIn(data))
-              i18n.changeLanguage(data.locale)
+              router.push(router.asPath, router.asPath, { locale: data.locale })
             })
           } else if (response.status === 401 || response.status === 403 || response.status === 422) {
             dispatch(fail())
           } else console.log("Got code", response.status, "for /my-settings/")
         })
+    } else {
+      const localeFromLocalStorage = window.localStorage.getItem("mub-interface-locale")
+      if (localeFromLocalStorage !== null
+        && languages.map(v => v.locale).includes(localeFromLocalStorage)
+        && localeFromLocalStorage !== router.locale) {
+        dispatch(settings({ locale: localeFromLocalStorage }))
+        router.push(router.asPath, router.asPath, { locale: localeFromLocalStorage })
+      }
     }
   }, [router, dispatch])
 

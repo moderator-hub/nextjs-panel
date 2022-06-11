@@ -99,8 +99,8 @@ export default function SignInPage() {
                       setErrors({ wrongPassword: true })
                     } else if (data) {
                       dispatch(signIn(data))
-                      if (retryPath) router.push(retryPath)
-                      else router.push("/")
+                      if (retryPath) router.push(retryPath, retryPath, { locale: data.locale })
+                      else router.push("/", "/", { locale: data.locale })
                     } else {
                       setErrors({ serverError: true })
                     }
