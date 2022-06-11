@@ -97,7 +97,7 @@ export default function SignInPage() {
                       setErrors({ moderatorNotFound: true })
                     } else if (data === "Wrong password") {
                       setErrors({ wrongPassword: true })
-                    } else if (Array.isArray(data)) {
+                    } else if (data) {
                       dispatch(signIn(data))
                       if (retryPath) router.push(retryPath)
                       else router.push("/")

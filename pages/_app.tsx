@@ -41,13 +41,13 @@ function AppInner({ Component, pageProps }: AppProps) {
 
   useEffect(() => {
     if (authorized === undefined) {
-      authorizedFetch("/my-permissions/", { method: "get", })
+      authorizedFetch("/my-settings/", { method: "get", })
         .then(response => {
           if (response.status === 200) {
-            response.json().then(permissions => dispatch(signIn(permissions)))
+            response.json().then(data => dispatch(signIn(data)))
           } else if (response.status === 401 || response.status === 403 || response.status === 422) {
             dispatch(fail())
-          } else console.log("Got code", response.status, "for /my-permissions/")
+          } else console.log("Got code", response.status, "for /my-settings/")
         })
     }
   }, [router, dispatch, authorized])
