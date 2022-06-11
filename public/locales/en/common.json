@@ -10,5 +10,10 @@
 
   "header-tooltip-settings": "Settings",
   "header-tooltip-support": "Support",
-  "header-tooltip-signout": "Sign Out"
+  "header-tooltip-signout": "Sign Out",
+
+  "settings-block-mode": "Mode",
+  "settings-block-language": "Language",
+  "settings-light-mode": "Light",
+  "settings-dark-mode": "Dark"
 }

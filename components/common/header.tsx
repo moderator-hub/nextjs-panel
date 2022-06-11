@@ -1,7 +1,7 @@
-import { useState } from "react"
-import { AppBar, Button, Grid, Stack, SwipeableDrawer, Toolbar } from "@mui/material"
+import { ReactNode, useState } from "react"
+import { AppBar, Button, ButtonGroup, Divider, Grid, ListItemIcon, ListItemText, MenuItem, MenuItemProps, Stack, SwipeableDrawer, Toolbar, Typography } from "@mui/material"
 import { useTranslation } from "next-i18next"
-import { Settings as SettingsIcon, ContactSupport as SupportIcon, Logout as LogoutIcon } from "@mui/icons-material"
+import { Settings as SettingsIcon, ContactSupport as SupportIcon, Logout as LogoutIcon, LightMode as LightModeIcon, DarkMode as DarkModeIcon, SvgIconComponent } from "@mui/icons-material"
 
 import { useAppSelector } from "../../data/hooks"
 import { signOut } from "../../data/slices/moderator"
@@ -9,6 +9,7 @@ import { authorizedFetch } from "../../utils/fetcher"
 import { useRequestorBase } from "../../utils/requestor"
 import { Link } from "./navigation"
 import { TooltipIconButton } from "./library"
+import { languages } from "../../data/static"
 
 interface HeaderButtonProps {
   text: string
@@ -37,11 +38,43 @@ function HeaderItem({ href, text, path, selected }: HeaderItemProps) {
   </Link>
 }
 
+interface DrawerItemProps extends MenuItemProps {
+  text: string
+  Icon: SvgIconComponent
+}
+
+function DrawerItem({ text, Icon, ...other }: DrawerItemProps) {
+  return <MenuItem {...other}>
+    <ListItemIcon>
+      <Icon fontSize="small" />
+    </ListItemIcon>
+    <ListItemText>
+      {text}
+    </ListItemText>
+  </MenuItem>
+}
+
+interface SettingsBlockProps {
+  title: string
+  children: ReactNode
+}
+
+function SettingsBlock({ title, children }: SettingsBlockProps) {
+  return <>
+    <Divider sx={{ mx: -2, mt: 3 }} />
+    <Typography variant="button" sx={{ pb: 1, pt: 2 }}>
+      {title}
+    </Typography>
+    {children}
+  </>
+}
+
 export default function Header() {
-  const { t } = useTranslation("common")
+  const { t, i18n } = useTranslation("common")
 
   const authorized = useAppSelector(state => state.moderator.authorized)
   const permissions = useAppSelector(state => state.moderator.permissions)
+  const mode = "dark"  // TODO put into state.moderator
 
   const { router, dispatch } = useRequestorBase()
   const path: string = router.asPath
@@ -52,7 +85,7 @@ export default function Header() {
     router.push("/signin")
   }
 
-  const [open, setOpen] = useState<boolean>(true)
+  const [open, setOpen] = useState<boolean>(false)
 
   return <AppBar position="fixed" enableColorOnDark>
     <SwipeableDrawer
@@ -61,7 +94,48 @@ export default function Header() {
       onClose={() => setOpen(false)}
       onOpen={() => setOpen(true)}
     >
-      hi
+      <Stack
+        sx={{ width: 300, px: 2 }}
+        direction="column"
+      >
+        <Typography variant="h5" sx={{ pt: 2 }}>
+          Settings
+        </Typography>
+        <SettingsBlock title={t("settings-block-mode")}>
+          <ButtonGroup variant="outlined" fullWidth>
+            {[
+              { text: "light", Icon: LightModeIcon },
+              { text: "dark", Icon: DarkModeIcon }
+            ].map(({ text, Icon }, key) => (
+              <Button
+                key={key}
+                startIcon={<Icon />}
+                sx={{ textTransform: "none" }}
+                variant={text === mode ? "contained" : "outlined"}
+              >
+                <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                  {t("settings-" + text + "-mode")}
+                </Typography>
+              </Button>
+            ))}
+          </ButtonGroup>
+        </SettingsBlock>
+        <SettingsBlock title={t("settings-block-language")}>
+          <ButtonGroup variant="outlined" fullWidth orientation="vertical">
+            {languages.map(({ name, locale }, key) => (
+              <Button
+                key={key}
+                sx={{ textTransform: "none" }}
+                variant={locale === i18n.language ? "contained" : "outlined"}
+              >
+                <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                  {name}
+                </Typography>
+              </Button>
+            ))}
+          </ButtonGroup>
+        </SettingsBlock>
+      </Stack>
     </SwipeableDrawer>
     <Toolbar variant="dense">
       <Grid
