@@ -10,5 +10,6 @@ export function authorizedFetchArgs(): RequestInit {
 }
 
 export const languages: { locale: string, name: string }[] = [
-  { locale: "en", name: "English" }
+  { locale: "en", name: "English" },
+  { locale: "ru", name: "Русский" },
 ]
