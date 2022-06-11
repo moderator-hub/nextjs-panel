@@ -8,3 +8,8 @@ export function defaultFetchArgs(): RequestInit {
 export function authorizedFetchArgs(): RequestInit {
   return defaultFetchArgs()
 }
+
+export const languages: { locale: string, name: string }[] = [
+  { locale: "en", name: "English" },
+  { locale: "ru", name: "Русский" },
+]

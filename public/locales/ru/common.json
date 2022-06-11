@@ -1,0 +1,19 @@
+{
+  "app-name": "MUB",
+
+  "manage mods": "Управление Модераторами",
+
+  "header-home": "Главная",
+  "header-support": "Поддержка",
+  "header-logout": "Выйти",
+  "header-signin": "Вход",
+
+  "header-tooltip-settings": "Настройки",
+  "header-tooltip-support": "Поддержка",
+  "header-tooltip-signout": "Выйти",
+
+  "settings-block-mode": "Тема",
+  "settings-block-language": "Язык",
+  "settings-light-mode": "Светлая",
+  "settings-dark-mode": "Тёмная"
+}

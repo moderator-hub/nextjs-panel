@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react"
-import { Button, Dialog, DialogContent, DialogTitle, Grid, IconButton, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material"
+import { Button, Dialog, DialogContent, DialogTitle, Grid, IconButton, Paper, Stack, Tooltip, Typography } from "@mui/material"
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Close as CloseIcon, Star as StarIcon, DoNotDisturb as DoNotDisturbIcon } from "@mui/icons-material"
-import { useForm, Controller } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import InfiniteScroll from "react-infinite-scroll-component"
 import * as yup from "yup"
+import { useTranslation } from "next-i18next"
+import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
 import { TooltipIconButton, CardWrapper, CheckboxedItem, AreYouSureDialog, PasswordField } from "../../components/common/library"
 import { ProtectedPage } from "../../components/templates/page-template"
-import { RequestorPrams, RequestState, useRequest, useRequestor } from "../../utils/requestor"
+import { RequestorPrams, RequestState, useRequest } from "../../utils/requestor"
 import { isEmpty, ModPerm } from "../../utils/other"
 import { useAppSelector } from "../../data/hooks"
+import { DefaultLoading } from "../../components/templates/default-pages"
+import { ErrorDescription, ErrorFormText, TextFieldController } from "../../components/common/forms"
 
 interface ModeratorData {
   id: number
@@ -31,6 +35,8 @@ interface RemoveModeratorDialogProps extends ModeratorDialogProps {
 }
 
 function RemoveModeratorDialog({ data, open, onClose, updateModerator, protectedRequest }: RemoveModeratorDialogProps) {
+  const { t } = useTranslation("superuser")
+
   function confirm() {
     protectedRequest({
       path: `/moderators/${data.id}/`,
@@ -50,10 +56,10 @@ function RemoveModeratorDialog({ data, open, onClose, updateModerator, protected
     cancel={onClose}
   >
     <Typography variant="body1">
-      Do you really want to remove moderator {data.username}?
+      {t("confirm-delete-question", { username: data.username })}
     </Typography>
     <Typography variant="body1" color="error">
-      You won't be able to undo this action
+      {t("confirm-delete-alert")}
     </Typography>
   </AreYouSureDialog>
 }
@@ -73,6 +79,8 @@ interface EditModeratorDialogProps extends ModeratorDialogProps {
 }
 
 function EditModeratorDialog({ data, open, onClose, globalPermissions, updateModerator, protectedRequest }: EditModeratorDialogProps) {
+  const { t } = useTranslation("superuser")
+
   const newEntry = data === undefined
   const myPerms: undefined | number[] = useAppSelector(state => state.moderator.permissions?.map(item => item.id))
   const initialPerms: number[] = data === undefined ? [] : data.permissions
@@ -85,15 +93,15 @@ function EditModeratorDialog({ data, open, onClose, globalPermissions, updateMod
   const passwordError = !!errors?.password?.type
   const anyError = usernameError || passwordError
 
-  const errorDescription: string[] = []
+  const errorDescription: ErrorDescription[] = []
   if (anyError) {
     if (usernameError) {
-      if (errors?.username?.type === "max") errorDescription.push("Username is too long")
-      if (errors?.username?.type === "required") errorDescription.push("Username is required")
+      if (errors?.username?.type === "max") errorDescription.push({ field: "username", type: "too-long" })
+      if (errors?.username?.type === "required") errorDescription.push({ field: "username", type: "required" })
     }
     if (passwordError) {
-      if (errors?.password?.type === "max") errorDescription.push("Password is too long")
-      if (errors?.password?.type === "required") errorDescription.push("Password is required")
+      if (errors?.password?.type === "max") errorDescription.push({ field: "new-password", type: "too-long" })
+      if (errors?.password?.type === "required") errorDescription.push({ field: "new-password", type: "required" })
     }
   }
 
@@ -133,7 +141,7 @@ function EditModeratorDialog({ data, open, onClose, globalPermissions, updateMod
 
   return <Dialog open={open}>
     <DialogTitle>
-      {newEntry ? "New" : "Editing"} moderator
+      {t((newEntry ? "creating" : "editing") + "-mod-title")}
       <IconButton
         onClick={close}
         sx={{
@@ -147,49 +155,23 @@ function EditModeratorDialog({ data, open, onClose, globalPermissions, updateMod
       </IconButton>
     </DialogTitle>
     <DialogContent>
-      <Controller
+      <TextFieldController
         name="username"
         control={control}
         defaultValue={data?.username === undefined ? "" : data?.username}
-        render={({ field }) => (
-          <TextField
-            sx={{ width: "100%", }}
-            label="Username"
-            error={usernameError}
-            fullWidth
-            margin="normal"
-            {...field}
-            ref={null}
-          />
-        )}
+        error={usernameError}
       />
-      <Controller
-        name="password"
-        control={control}
+      <TextFieldController
+        name="new-password"
+        autoComplete="none"
         defaultValue=""
-        render={({ field }) => (
-          <PasswordField
-            sx={{ width: "100%", }}
-            label="New Password"
-            autoComplete="none"
-            error={passwordError}
-            fullWidth
-            margin="normal"
-            {...field}
-            ref={null}
-          />
-        )}
+        control={control}
+        error={passwordError}
+        Field={PasswordField}
       />
-      {anyError && errorDescription
-        .map((item, key) => <Typography
-          sx={{ mt: 1 }}
-          variant="body1"
-          color="error"
-          key={key}
-        >
-          {item}
-        </Typography>)
-      }
+      <ErrorFormText
+        errors={errorDescription}
+      />
       <Paper sx={{ mt: 2, overflowY: "auto", maxHeight: 300 }}>
         <Stack
           direction="column"
@@ -200,7 +182,7 @@ function EditModeratorDialog({ data, open, onClose, globalPermissions, updateMod
             <CheckboxedItem
               key={key}
               disabled={!myPerms?.includes(perm.id)}
-              disabledText="Can't edit this permission"
+              disabledText={t("no-edit-perm")}
               fullWidth
               text={perm.name}
               checked={permissions.includes(perm.id)}
@@ -218,7 +200,7 @@ function EditModeratorDialog({ data, open, onClose, globalPermissions, updateMod
         sx={{ mt: 2 }}
         onClick={submit}
       >
-        {newEntry ? "Create" : "Save"}
+        {t((newEntry ? "creating" : "editing") + "-mod-action")}
       </Button>
     </DialogContent>
   </Dialog>
@@ -234,7 +216,9 @@ interface ModeratorCardProps {
 }
 
 function SuperuserCard({ data }: ModeratorCardProps) {
-  return <Tooltip title="Use CLI to edit superusers">
+  const { t } = useTranslation("superuser")
+
+  return <Tooltip title={t("tooltip-superusers")}>
     <Paper>
       <Stack direction="row" spacing={1} sx={{ p: 1, alignItems: "center", justifyContent: "center", height: cardHeight }}>
         <StarIcon color="warning" />
@@ -252,6 +236,8 @@ function ModeratorCard({ data, ...other }: ModeratorCardProps) {
   const [editing, setEditing] = useState<boolean>(false)
   const [removing, setRemoving] = useState<boolean>(false)
 
+  const { t } = useTranslation("superuser")
+
   return <>
     <RemoveModeratorDialog data={data} open={removing} onClose={() => setRemoving(false)} {...other} />
     <EditModeratorDialog data={data} open={editing} onClose={() => setEditing(false)} {...other} />
@@ -266,7 +252,7 @@ function ModeratorCard({ data, ...other }: ModeratorCardProps) {
       >
         {hover && <TooltipIconButton
           onClick={() => setEditing(true)}
-          title="Edit Permissions"
+          title={t("edit-perms")}
           Icon={EditIcon}
         />}
         <Typography
@@ -278,7 +264,7 @@ function ModeratorCard({ data, ...other }: ModeratorCardProps) {
         </Typography>
         {hover && <TooltipIconButton
           onClick={() => setRemoving(true)}
-          title="Remove Moderator"
+          title={t("remove-mod")}
           Icon={DeleteIcon}
         />}
       </Stack>
@@ -292,6 +278,9 @@ function ModeratorCardSwitch(props: ModeratorCardProps) {
 }
 
 export default function ManageMods() {
+  const { t: tCommon } = useTranslation("common")
+  const { t } = useTranslation("superuser")
+
   const [creating, setCreating] = useState<boolean>(false)
 
   const { data: globalPermissions, code: code1, protectedRequest } = useRequest("/permissions/")
@@ -324,7 +313,10 @@ export default function ManageMods() {
     setModerators(newModerators)
   }
 
-  return <ProtectedPage code={code1 === 200 ? code2 : code1} title="Moderator Management | MUB">
+  return <ProtectedPage
+    code={code1 === 200 ? code2 : code1}
+    title={`${t("title")} | ${tCommon("app-name")}`}
+  >
     <EditModeratorDialog
       open={creating}
       onClose={() => setCreating(false)}
@@ -334,14 +326,14 @@ export default function ManageMods() {
     />
     <Stack sx={{ maxWidth: 1200, width: "100%", m: "auto", py: 4, px: 2, textAlign: "center" }} direction="column">
       <Typography variant="h4" sx={{ mb: 2 }}>
-        Superuser: Moderator Management
+        {t("headline")}
       </Typography>
       {moderators !== undefined &&
         <InfiniteScroll
           dataLength={moderators.length}
           next={loadMore}
           hasMore={hasNext === true}
-          loader={<h4>Loading...</h4>}
+          loader={<DefaultLoading />}
         >
           <Grid container spacing={2}>
             <Grid item xs={3}>
@@ -365,3 +357,9 @@ export default function ManageMods() {
     </Stack>
   </ProtectedPage >
 }
+
+export const getStaticProps = async ({ locale }: { locale: string }) => ({
+  props: {
+    ...await serverSideTranslations(locale, ["common", "forms", "superuser"]),
+  },
+})

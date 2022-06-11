@@ -1,0 +1,19 @@
+{
+  "app-name": "MUB",
+
+  "manage mods": "Manage Mods",
+
+  "header-home": "Home",
+  "header-support": "Support",
+  "header-logout": "Log Out",
+  "header-signin": "Sign In",
+
+  "header-tooltip-settings": "Settings",
+  "header-tooltip-support": "Support",
+  "header-tooltip-signout": "Sign Out",
+
+  "settings-block-mode": "Mode",
+  "settings-block-language": "Language",
+  "settings-light-mode": "Light",
+  "settings-dark-mode": "Dark"
+}

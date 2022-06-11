@@ -1,4 +1,4 @@
-import { Button, Card, CardActionArea, CardContent, CardProps, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, ListItemIcon, ListItemText, MenuItem, MenuItemProps, Stack, TextField, TextFieldProps, Tooltip, Typography } from "@mui/material"
+import { Button, Card, CardActionArea, CardContent, CardProps, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, ListItemIcon, ListItemText, MenuItem, MenuItemProps, Stack, SxProps, TextField, TextFieldProps, Tooltip, Typography } from "@mui/material"
 import { ReactNode, useState, MouseEvent, ReactChild, ReactFragment, ReactPortal } from "react"
 import { SvgIconComponent, VisibilityOff as VisibilityOffIcon, Visibility as VisibilityOnIcon } from "@mui/icons-material"
 
@@ -63,11 +63,12 @@ export interface TooltipIconButtonProps {
   title?: boolean | ReactChild | ReactFragment | ReactPortal
   Icon?: SvgIconComponent
   onClick?: () => void
+  sx?: SxProps
 }
 
-export function TooltipIconButton({ title, Icon, onClick }: TooltipIconButtonProps) {
+export function TooltipIconButton({ title, Icon, onClick, sx }: TooltipIconButtonProps) {
   return <Tooltip title={title ? title : ""}>
-    <IconButton onClick={onClick}>
+    <IconButton onClick={onClick} sx={sx}>
       {Icon !== undefined && <Icon fontSize="small" />}
     </IconButton>
   </Tooltip>

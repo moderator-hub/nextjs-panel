@@ -1,0 +1,9 @@
+{
+  "username": "Имя пользователя",
+  "password": "Пароль",
+  "new-password": "Новый Пароль",
+  "too-long-error": "Значение поля {{field}} слишком длинное",
+  "required-error": "{{field}} обязательно заполнить",
+  "client-error": "Клиентская ошибка",
+  "server-error": "Серверная ошибка"
+}
