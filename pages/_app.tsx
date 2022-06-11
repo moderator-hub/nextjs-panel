@@ -46,10 +46,10 @@ function AppInner({ Component, pageProps }: AppProps) {
   const mode = useAppSelector(state => state.moderator.mode)
 
   useEffect(() => {
-    if (mode === undefined && browserThemeDark != browserThemeLight) {
+    if (authorized !== undefined && mode === undefined && browserThemeDark != browserThemeLight) {
       dispatch(settings({ mode: browserThemeDark ? "dark" : "light" }))
     }
-  }, [dispatch, browserThemeDark, browserThemeLight])
+  }, [dispatch, authorized, browserThemeDark, browserThemeLight])
 
   useEffect(() => {
     if (authorized === undefined) {

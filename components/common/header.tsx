@@ -79,26 +79,36 @@ function SettingsDrawer({ open, setOpen }: SettingsDrawerProps) {
   const { authorized, dispatch, protectedRequest } = useRequestor()
   const mode = useAppSelector(state => state.moderator.mode)
 
-  const [newMode, setNewMode] = useState(() => mode)
-  const [newLocale, setNewLocale] = useState(() => i18n.language)
+  const [serverMode, setServerMode] = useState(mode)
+  const [serverLocale, setServerLocale] = useState(i18n.language)
 
   function switchMode(mode: string): void {
-    setNewMode(mode)
     dispatch(settings({ mode }))
   }
 
   function switchLocale(locale: string): void {
-    setNewLocale(locale)
     i18n.changeLanguage(locale)
     dispatch(settings({ locale }))
   }
 
   function saveAndClose() {
-    setOpen(false)
-    console.log("hi")
-    if (authorized) {
-      // TODO protectedRequest
-    }
+    if (authorized && (serverMode !== mode || serverLocale !== i18n.language)) {
+      protectedRequest({
+        path: "/my-settings/",
+        body: {
+          mode: mode === serverMode ? undefined : mode,
+          locale: serverLocale === i18n.language ? undefined : i18n.language
+        },
+        request: { method: "post" },
+        setState: ({ code }) => {
+          if (code === 200) {
+            setServerMode(mode)
+            setServerLocale(i18n.language)
+            setOpen(false)
+          }
+        }
+      })
+    } else setOpen(false)
   }
 
   return <SwipeableDrawer
@@ -125,7 +135,7 @@ function SettingsDrawer({ open, setOpen }: SettingsDrawerProps) {
               startIcon={<Icon />}
               sx={{ textTransform: "none" }}
               onClick={() => switchMode(text)}
-              variant={text === newMode ? "contained" : "outlined"}
+              variant={text === mode ? "contained" : "outlined"}
             >
               <Typography variant="body1" sx={{ fontWeight: "bold" }}>
                 {t("settings-" + text + "-mode")}
@@ -141,7 +151,7 @@ function SettingsDrawer({ open, setOpen }: SettingsDrawerProps) {
               key={key}
               sx={{ textTransform: "none" }}
               onClick={() => switchLocale(locale)}
-              variant={locale === newLocale ? "contained" : "outlined"}
+              variant={locale === i18n.language ? "contained" : "outlined"}
             >
               <Typography variant="body1" sx={{ fontWeight: "bold" }}>
                 {name}
