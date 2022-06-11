@@ -7,7 +7,7 @@ import { appWithTranslation, useTranslation } from "next-i18next"
 
 import { DefaultLoading } from "../components/templates/default-pages"
 import Header from "../components/common/header"
-import { fail, signIn } from "../data/slices/moderator"
+import { fail, settings, signIn } from "../data/slices/moderator"
 import { store } from "../data/store"
 import { useAppSelector } from "../data/hooks"
 import { authorizedFetch } from "../utils/fetcher"
@@ -38,10 +38,18 @@ const lightTheme = createTheme({
 
 function AppInner({ Component, pageProps }: AppProps) {
   const { i18n } = useTranslation()
-  const { router, dispatch } = useRequestorBase()
+  const browserThemeDark = useMediaQuery("(prefers-color-scheme: dark)")
+  const browserThemeLight = useMediaQuery("(prefers-color-scheme: light)")
 
+  const { router, dispatch } = useRequestorBase()
   const authorized = useAppSelector(state => state.moderator.authorized)
   const mode = useAppSelector(state => state.moderator.mode)
+
+  useEffect(() => {
+    if (mode === undefined && browserThemeDark != browserThemeLight) {
+      dispatch(settings({ mode: browserThemeDark ? "dark" : "light" }))
+    }
+  }, [dispatch, browserThemeDark, browserThemeLight])
 
   useEffect(() => {
     if (authorized === undefined) {
