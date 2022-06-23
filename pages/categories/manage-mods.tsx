@@ -68,7 +68,7 @@ function schemaFactory(newEntry: boolean) {
   return yup
     .object({
       username: yup.string().max(100).required(),
-      password: newEntry ? yup.string().max(100).required() : yup.string().max(100),
+      [newEntry ? "password" : "new-password"]: newEntry ? yup.string().max(100).required() : yup.string().max(100),
     })
     .required()
 }
